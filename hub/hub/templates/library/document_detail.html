@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }}{% endblock %}
+{% block content %}
+<h1>{{ doc.title }}</h1>
+<p><span class="chip">{{ doc.get_doc_type_display }}</span>
+   {% if doc.date %}<span class="data muted">{{ doc.date|date:"d/m/Y" }}</span>{% endif %}
+   {% if doc.authors %}· {{ doc.authors }}{% endif %}
+   {% if doc.project %}· projet
+     <a href="{{ doc.project.get_absolute_url }}">{{ doc.project.name }}</a>{% endif %}</p>
+
+<div class="toolbar">
+  <a class="btn" href="{{ doc.pdf.url }}" download>Télécharger le PDF</a>
+  {% if doc.source_zip %}
+  <a class="btn" href="{{ doc.source_zip.url }}" download>Sources LaTeX (zip)</a>
+  {% else %}
+  <span class="muted">Pas de sources déposées — pense-y pour la promo suivante.</span>
+  {% endif %}
+  <span class="spacer"></span>
+  {% if is_admin %}
+  <a class="btn btn-danger" href="{% url 'document_delete' doc.pk %}">Supprimer</a>
+  {% endif %}
+</div>
+
+{% comment %} Le PDF est servi `inline` par la vue média protégée : le lecteur
+   intégré du navigateur l'affiche directement dans l'iframe. {% endcomment %}
+<iframe class="pdf-frame" src="{{ doc.pdf.url }}" title="{{ doc.title }}"></iframe>
+<p class="muted">Si l'aperçu ne s'affiche pas (certains navigateurs mobiles),
+utilise « Télécharger le PDF ».</p>
+{% endblock %}

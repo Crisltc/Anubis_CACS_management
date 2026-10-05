@@ -1,0 +1,28 @@
+{% comment %} =========================================================================
+   SIGNATURE VISUELLE : le rail de cycle de vie, en UN seul endroit.
+   Attend `board`, et optionnellement `viewed_stage` (l'étape CONSULTÉE ; par
+   défaut le statut réel de l'élément). Nom explicite et non `current` : ce
+   fragment est inclus dans des pages qui ont leurs propres variables, et un
+   `current` générique s'est déjà fait écraser silencieusement par le firmware
+   courant de la page de flash — le rail perdait alors sa pastille.
+   Le rail affiché est celui DU PÔLE (élec route un PCB, méca passe par la
+   CAO, soft par la revue de code).
+
+   Deux marques distinctes, et c'est volontaire :
+     .now    l'étape qu'on REGARDE (pastille encre) ;
+     .actual l'étape où l'élément se trouve VRAIMENT (souligné accent).
+   Sur une sous-page d'étape les deux diffèrent : sans `.actual`, consulter
+   « Conception » d'une pièce qui en est à la CAO effaçait toute trace de son
+   étape réelle. Elles se superposent sur les autres pages, où l'on regarde
+   justement l'étape courante.
+
+   Chaque étape est un LIEN vers sa sous-page — le CSS cible bien `a`.
+   ======================================================================== {% endcomment %}
+<div class="lifecycle">
+  {% for key, label in board.lifecycle %}
+  <a href="{% url 'board_stage' board.pk key %}"
+     {% if key == board.status %}aria-current="step"{% endif %}
+     class="{% if forloop.counter0 < board.lifecycle_position %}done{% endif %}{% if key == viewed_stage|default:board.status %} now{% endif %}{% if key == board.status %} actual{% endif %}"
+    >{% if key in board.na_stages %}<s>{{ label }}</s>{% else %}{{ label }}{% endif %}</a>
+  {% endfor %}
+</div>

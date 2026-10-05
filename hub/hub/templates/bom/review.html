@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Arbitrage — {{ imp.filename }}{% endblock %}
+{% block content %}
+<p class="eyebrow">{{ imp.board }}</p>
+<h1>Arbitrage du rapprochement</h1>
+<p class="muted">Rien n'entre dans la nomenclature sans passer ici : ce qui est
+sûr (score ≥ 95) est validé automatiquement et replié, le reste attend TA
+décision — jamais de devinette silencieuse.</p>
+
+{# ---------- Lignes ambiguës : le travail est là ------------------------- #}
+{% if grouped.review %}
+<h2 class="eyebrow" style="color:var(--warn)">À arbitrer ({{ grouped.review|length }})</h2>
+{% for line in grouped.review %}
+<div class="panel">
+  {% include "bom/_line_head.html" %}
+  <form method="post" action="{% url 'bom_line_decide' line.pk %}">
+    {% csrf_token %}
+    {% for cand in line.candidates.all %}
+    <label style="font-weight:normal;display:flex;gap:.5rem;align-items:baseline;text-transform:none;letter-spacing:0">
+      <input type="radio" name="part" value="{{ cand.part.pk }}"
+             style="width:auto;min-height:0" {% if forloop.first %}checked{% endif %}>
+      <span><b>{{ cand.part.name }}</b>
+        <span class="chip {% if cand.score >= 95 %}ok{% elif cand.score >= 80 %}warn{% endif %}">{{ cand.score }}</span>
+        <span class="muted">{{ cand.reason }}</span>
+        <a href="{{ cand.part.get_absolute_url }}" target="_blank">fiche ↗</a></span>
+    </label>
+    {% endfor %}
+    <p>
+      <button class="btn btn-primary" name="action" value="validate">Valider ce choix</button>
+      <button class="btn" name="action" value="ignore">Écarter la ligne</button>
+    </p>
+  </form>
+</div>
+{% endfor %}
+{% endif %}
+
+{# ---------- Sans correspondance : créer le composant -------------------- #}
+{% if grouped.nomatch %}
+<h2 class="eyebrow" style="color:var(--bad)">Sans correspondance ({{ grouped.nomatch|length }})</h2>
+{% for line in grouped.nomatch %}
+<div class="panel">
+  {% include "bom/_line_head.html" %}
+  <form method="post" action="{% url 'bom_line_decide' line.pk %}">
+    {% csrf_token %}
+    <div class="row">
+      <div>
+        <label>Nom du nouveau composant</label>
+        <input name="new_name" value="{{ line.mpn|default:line.value }}{% if not line.mpn and line.package %} {{ line.package }}{% endif %}">
+      </div>
+      <div>
+        <label>Catégorie</label>
+        <select name="category">
+          {% for key, label in categories %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Emplacement</label>
+        <select name="location">
+          <option value="">— non rangé —</option>
+          {% for l in locations %}<option value="{{ l.pk }}">{{ l.name }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <p class="muted">Le composant sera créé avec <b>0 en stock</b> : la quantité
+    s'ajoutera à la première saisie ou livraison.</p>
+    <p>
+      <button class="btn btn-primary" name="action" value="create">Créer et associer</button>
+      <button class="btn" name="action" value="ignore">Écarter la ligne</button>
+    </p>
+  </form>
+</div>
+{% endfor %}
+{% endif %}
+
+{# ---------- Auto-validées et ignorées : repliées ------------------------ #}
+{% if grouped.auto %}
+<details class="fold">
+  <summary>Validées automatiquement ({{ grouped.auto|length }})</summary>
+  <div class="panel"><table>
+    <tr><th>Designators</th><th class="num">Qté</th><th>Composant</th><th>Raison</th></tr>
+    {% for line in grouped.auto %}
+    <tr><td class="data">{{ line.designators }}</td>
+        <td class="num">{{ line.qty|floatformat:"-2" }}</td>
+        <td><a href="{{ line.matched_part.get_absolute_url }}">{{ line.matched_part.name }}</a></td>
+        <td class="muted">{{ line.matched_reason }} ({{ line.matched_score }})</td></tr>
+    {% endfor %}
+  </table></div>
+</details>
+{% endif %}
+{% if grouped.ignored %}
+<details class="fold">
+  <summary>Ignorées — DNP et écartées ({{ grouped.ignored|length }})</summary>
+  <div class="panel"><table>
+    {% for line in grouped.ignored %}
+    <tr><td class="data">{{ line.designators }}</td>
+        <td>{{ line.value }} {{ line.mpn }}</td>
+        <td class="muted">{{ line.matched_reason }}</td></tr>
+    {% endfor %}
+  </table></div>
+</details>
+{% endif %}
+
+{# ---------- Enregistrement final ---------------------------------------- #}
+<div class="toolbar" style="margin-top:1.5rem">
+  {% if imp.status == 'done' %}
+  <span class="chip ok">Nomenclature enregistrée</span>
+  <a class="btn" href="{% url 'feasibility' imp.board.pk %}">Voir la faisabilité</a>
+  {% else %}
+  <form method="post" action="{% url 'bom_save' imp.pk %}">
+    {% csrf_token %}
+    <button class="btn btn-primary" {% if pending %}disabled
+      title="Arbitre d'abord toutes les lignes"{% endif %}>Enregistrer la nomenclature</button>
+  </form>
+  {% if pending %}
+  <span class="muted">L'enregistrement se débloque quand tout est arbitré :
+    une BOM partielle fausserait la faisabilité.</span>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

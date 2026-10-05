@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{% if part %}Modifier {{ part.name }}{% else %}Nouveau composant{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if part %}Modifier le composant{% else %}Nouveau composant{% endif %}</h1>
+<form method="post" class="panel" enctype="multipart/form-data">
+  {% csrf_token %}
+  <label for="name">Nom</label>
+  <input id="name" name="name" value="{{ part.name|default:'' }}" required autofocus
+         placeholder="RES 10k 0603 1% — ou le MPN pour un actif">
+  <div class="row">
+    <div>
+      <label for="category">Catégorie</label>
+      <select id="category" name="category">
+        {% for key, label in categories %}
+        <option value="{{ key }}" {% if part.category == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="location">Emplacement</label>
+      <select id="location" name="location">
+        <option value="">— non rangé —</option>
+        {% for l in locations %}
+        <option value="{{ l.pk }}" {% if part.location_id == l.pk %}selected{% endif %}>{{ l.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="min_qty">Seuil d'alerte</label>
+      <input id="min_qty" name="min_qty" inputmode="decimal" value="{{ part.min_qty|default:'0' }}">
+    </div>
+  </div>
+  <div class="row">
+    <div><label for="value">Valeur</label>
+      <input id="value" name="value" value="{{ part.value|default:'' }}" placeholder="10k, 100n"></div>
+    <div><label for="package">Boîtier</label>
+      <input id="package" name="package" value="{{ part.package|default:'' }}" placeholder="0603"></div>
+    <div><label for="mpn">MPN</label>
+      <input id="mpn" name="mpn" value="{{ part.mpn|default:'' }}"></div>
+    <div><label for="manufacturer">Fabricant</label>
+      <input id="manufacturer" name="manufacturer" value="{{ part.manufacturer|default:'' }}"></div>
+  </div>
+
+  <h2 class="eyebrow" style="margin-top:1.2rem">Fournisseur</h2>
+  <p class="muted">Aucune API n'est interrogée : on stocke le lien pour ouvrir
+  la fiche produit dans un onglet au moment de commander.</p>
+  <div class="row">
+    <div><label for="supplier">Fournisseur</label>
+      <input id="supplier" name="supplier" value="{{ part.supplier|default:'' }}"
+             placeholder="LCSC, Mouser, RS…"></div>
+    <div><label for="sku">Réf fournisseur</label>
+      <input id="sku" name="sku" value="{{ part.sku|default:'' }}" placeholder="C25804"></div>
+    <div><label for="unit_price">Prix unitaire (EUR)</label>
+      <input id="unit_price" name="unit_price" inputmode="decimal"
+             value="{{ part.unit_price|default:'' }}"></div>
+  </div>
+  <label for="supplier_url">Lien vers la page produit</label>
+  <input id="supplier_url" name="supplier_url" type="url" value="{{ part.supplier_url|default:'' }}"
+         placeholder="https://www.lcsc.com/product-detail/…">
+  <label for="datasheet_url">Lien datasheet</label>
+  <input id="datasheet_url" name="datasheet_url" type="url" value="{{ part.datasheet_url|default:'' }}">
+  <label for="datasheet_pdf">Datasheet PDF (fichier, en plus du lien — optionnel)</label>
+  <input id="datasheet_pdf" type="file" name="datasheet_pdf" accept="application/pdf">
+  {% if part.datasheet_pdf %}<p class="muted">Fichier actuel :
+    <a href="{{ part.datasheet_pdf.url }}" target="_blank" rel="noopener">{{ part.datasheet_pdf.name }}</a></p>{% endif %}
+
+  <label for="photo">Photo (pour les composants qu'on ne reconnaît pas au
+    premier coup d'œil — optionnelle)</label>
+  <input id="photo" type="file" name="photo" accept="image/*">
+  <label for="notes">Notes (Markdown)</label>
+  <textarea id="notes" name="notes">{{ part.notes|default:'' }}</textarea>
+  <p><button class="btn btn-primary">Enregistrer</button>
+  {% if part %}<a class="btn" href="{{ part.get_absolute_url }}">Annuler</a>{% endif %}</p>
+</form>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load hub_tags %}
+{% block title %}{{ part.name }}{% endblock %}
+{% block content %}
+<p class="eyebrow"><a href="{% url 'part_list' %}">Catalogue</a></p>
+<div class="toolbar">
+  <h1 style="margin:0">{{ part.name }}</h1>
+  <span class="spacer"></span>
+  <a class="btn" href="{% url 'part_edit' part.pk %}">Modifier</a>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <p class="eyebrow">Stock</p>
+    <p class="data" style="font-size:2rem;margin:.2rem 0">
+      {{ part.stock|floatformat:"-2" }}
+      {% if part.min_qty and part.stock < part.min_qty %}
+      <span class="chip bad">sous le seuil ({{ part.min_qty|floatformat:"-2" }})</span>
+      {% endif %}
+    </p>
+    <p class="muted">Emplacement : <b>{{ part.location.name|default:"non rangé" }}</b></p>
+
+    {# Sortie directe depuis la fiche : le mouvement met le stock à jour. #}
+    <form method="post" action="{% url 'quick_out_submit' %}" class="toolbar">
+      {% csrf_token %}
+      <input type="hidden" name="part_id" value="{{ part.pk }}">
+      <input type="hidden" name="back" value="{{ part.get_absolute_url }}">
+      <input name="qty" inputmode="decimal" placeholder="qté" style="width:90px" required>
+      <input name="why" placeholder="pour quoi ?" style="flex:1">
+      <button class="btn btn-primary">Sortir</button>
+    </form>
+
+    <details class="fold">
+      <summary>Corriger l'inventaire</summary>
+      <form method="post" action="{% url 'stock_adjust' part.pk %}">
+        {% csrf_token %}
+        <label for="counted">Quantité réellement comptée dans le bac</label>
+        <input id="counted" name="counted" inputmode="decimal" required>
+        <input name="why" placeholder="motif (optionnel)">
+        <p class="muted">Un mouvement d'ajustement sera ajouté : l'historique
+        n'est jamais réécrit, il est prolongé.</p>
+        <p><button class="btn">Ajuster</button></p>
+      </form>
+    </details>
+  </div>
+
+  <div class="card">
+    <p class="eyebrow">Fiche</p>
+    <table>
+      <tr><td>Catégorie</td><td class="data">{{ part.get_category_display }}</td></tr>
+      {% if part.value %}<tr><td>Valeur</td><td class="data">{{ part.value }}</td></tr>{% endif %}
+      {% if part.package %}<tr><td>Boîtier</td><td class="data">{{ part.package }}</td></tr>{% endif %}
+      {% if part.mpn %}<tr><td>MPN</td><td class="data">{{ part.mpn }}</td></tr>{% endif %}
+      {% if part.manufacturer %}<tr><td>Fabricant</td><td>{{ part.manufacturer }}</td></tr>{% endif %}
+      {% if part.unit_price %}<tr><td>Prix unitaire</td><td class="num">{{ part.unit_price }} €</td></tr>{% endif %}
+    </table>
+    <p style="margin-top:.6rem">
+      {% if part.supplier_url %}<a class="btn btn-sm" href="{{ part.supplier_url }}"
+        target="_blank" rel="noopener">{{ part.supplier|default:"Fournisseur" }} ↗</a>{% endif %}
+      {% if part.datasheet_url %}<a class="btn btn-sm" href="{{ part.datasheet_url }}"
+        target="_blank" rel="noopener">Datasheet ↗</a>{% endif %}
+      {% if part.datasheet_pdf %}<a class="btn btn-sm" href="{{ part.datasheet_pdf.url }}"
+        target="_blank" rel="noopener">Datasheet PDF ↗</a>{% endif %}
+    </p>
+    {% if part.sku %}<p class="muted data">Réf fournisseur : {{ part.sku }}</p>{% endif %}
+    {% if part.photo %}<img class="doc-thumb" src="{{ part.photo.url }}"
+      alt="{{ part.name }}" loading="lazy">{% endif %}
+    {% if part.notes %}<div class="muted">{{ part.notes|md }}</div>{% endif %}
+  </div>
+</div>
+
+{% if bom_lines %}
+<h2 class="eyebrow">Utilisé par</h2>
+<div class="panel"><table>
+  <tr><th>Carte</th><th class="num">Qté / carte</th><th>Designators</th></tr>
+  {% for l in bom_lines %}
+  <tr><td><a href="{{ l.board.get_absolute_url }}">{{ l.board }}</a></td>
+      <td class="num">{{ l.qty|floatformat:"-2" }}</td>
+      <td class="data muted">{{ l.designators }}</td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+<h2 class="eyebrow">Registre des mouvements</h2>
+<p class="muted">Le stock affiché plus haut est exactement la somme de cette
+colonne — il ne peut pas être faux.</p>
+<div class="panel"><table>
+  <tr><th>Date</th><th>Type</th><th class="num">Qté</th><th>Par</th><th>Motif</th>{% if is_admin %}<th></th>{% endif %}</tr>
+  {% for m in movements %}
+  <tr>
+    <td class="data">{{ m.created|date:"d/m/Y H:i" }}</td>
+    <td><span class="chip mv-{{ m.kind }}">{{ m.get_kind_display }}</span></td>
+    <td class="num"><b>{{ m.delta|floatformat:"-2" }}</b></td>
+    <td>{{ m.author }}</td>
+    <td class="muted">{{ m.reason }}{% if m.board %} ·
+      <a href="{{ m.board.get_absolute_url }}">{{ m.board.name }}</a>{% endif %}</td>
+    {% if is_admin %}
+    <td><form method="post" action="{% url 'movement_delete' m.pk %}"
+        onsubmit="return confirm('Supprimer ce mouvement ? Le stock sera recalculé.')">
+        {% csrf_token %}<button class="btn btn-sm btn-danger">×</button></form></td>
+    {% endif %}
+  </tr>
+  {% empty %}<tr><td colspan="6" class="muted">Aucun mouvement.</td></tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

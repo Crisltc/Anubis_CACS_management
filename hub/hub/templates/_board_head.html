@@ -1,0 +1,18 @@
+{% comment %} Entête commune à TOUTES les pages d'un élément (fiche, sous-page
+   d'étape, faisabilité, édition, registre de flash) : fil d'Ariane, étape
+   réelle, rail. Attend `board`, optionnellement `viewed_stage`.
+
+   L'étape réelle est répétée en clair ici parce que le rail seul ne suffit
+   pas : sur une sous-page d'étape il met en avant l'étape CONSULTÉE, et on
+   ne doit jamais avoir à deviner où en est vraiment la pièce. La pastille
+   est un lien vers cette étape — un clic pour y revenir. {% endcomment %}
+<p class="eyebrow">
+  <a href="{{ board.project.get_absolute_url }}">{{ board.project.name }}</a>
+  {% if not hide_board_link %} / <a href="{{ board.get_absolute_url }}">{{ board.name }}</a>{% endif %}
+  ·
+  <span class="chip pole pole-{{ board.pole }}">{{ board.get_pole_display }}</span>
+  <a class="chip stage" href="{% url 'board_stage' board.pk board.status %}"
+     title="Étape actuelle de {{ board.noun }} « {{ board.name }} »"
+    >{{ board.status_label }}</a>
+</p>
+{% include "_rail.html" %}

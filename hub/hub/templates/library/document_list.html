@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Documents{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">Bibliothèque</h1>
+  <span class="spacer"></span>
+  <a class="btn btn-primary" href="{% url 'document_upload' %}">Déposer un document</a>
+</div>
+
+{# Filtres en GET : l'URL reste partageable. #}
+<form method="get" class="toolbar">
+  <select name="type" onchange="this.form.submit()">
+    <option value="">Tous les types</option>
+    {% for key, label in types %}
+    <option value="{{ key }}" {% if current_type == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="projet" onchange="this.form.submit()">
+    <option value="">Tous les projets</option>
+    {% for p in projects %}
+    <option value="{{ p.slug }}" {% if current_project == p.slug %}selected{% endif %}>{{ p.name }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="grid g3">
+  {% for d in documents %}
+  <div class="card">
+    {% if d.thumb %}
+    <a href="{{ d.get_absolute_url }}">
+      <img class="doc-thumb" src="{{ d.thumb.url }}" alt="" loading="lazy"></a>
+    {% endif %}
+    <h3><a href="{{ d.get_absolute_url }}">{{ d.title }}</a></h3>
+    <p><span class="chip">{{ d.get_doc_type_display }}</span>
+       {% if d.date %}<span class="muted data">{{ d.date|date:"m/Y" }}</span>{% endif %}</p>
+    {% if d.authors %}<p class="muted">{{ d.authors }}</p>{% endif %}
+  </div>
+  {% empty %}
+  <p class="muted">Aucun document. Le premier rapport déposé ici sera encore
+  lisible — et retrouvable — dans dix ans : c'est tout l'enjeu.</p>
+  {% endfor %}
+</div>
+{% endblock %}

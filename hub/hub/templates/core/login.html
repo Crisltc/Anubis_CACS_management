@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Connexion{% endblock %}
+{% block content %}
+<div class="login-box panel">
+  <div class="toolbar" style="margin:0 0 .4rem">
+    <p class="brand" style="margin:0">CACS <b>/ PECS</b></p>
+    <span class="spacer"></span>
+    {% include "_theme_toggle.html" %}
+  </div>
+  <p class="muted">Ton prénom signe tes publications, commentaires et éditions
+  de wiki : mets le vrai.</p>
+  <form method="post">
+    {% csrf_token %}
+    <label for="prenom">Prénom</label>
+    <input id="prenom" name="prenom" autofocus autocomplete="given-name" required>
+    <label for="password">Mot de passe du pôle</label>
+    <input id="password" name="password" type="password" required>
+    <p><button class="btn btn-primary" type="submit">Entrer</button></p>
+  </form>
+</div>
+{% endblock %}

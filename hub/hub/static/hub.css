@@ -1,0 +1,471 @@
+/* ===========================================================================
+   Hub — pôle électronique, Cercle Aérospatial CentraleSupélec
+   Direction artistique alignée sur les supports du pôle (POLARIS) :
+   - dégradé vert d'eau → bleu-vert profond, comme les planches de présentation ;
+   - pastilles NOIRES à coins pleins pour tout ce qui est action ou étiquette ;
+   - majuscules blanches, graisse forte, interlettrage large ;
+   - panneaux translucides posés sur le dégradé (l'encart « caractéristiques »).
+   Le vert d'eau vit en haut (bandeau), le fond descend vers le profond :
+   c'est la structure même de la planche POLARIS.
+   Mobile-first : la base est le téléphone en main dans l'atelier.
+   ======================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Orbitron:wght@600;800&display=swap');
+
+:root {
+  /* Vert d'eau du haut de planche → profond du bas */
+  --mint: #cfe9e2;
+  --mint-2: #9ccfc6;
+  --teal: #2f6f74;
+  --deep: #0a2731;
+  --deeper: #05171d;
+
+  --ink: #04141a;          /* le noir des pastilles */
+  --paper: #eaf6f4;        /* texte principal sur fond profond */
+  --paper-soft: #a9c6c8;   /* texte secondaire */
+  --line: rgba(255, 255, 255, .18);
+  --panel: rgba(255, 255, 255, .07);
+  --panel-2: rgba(255, 255, 255, .12);
+
+  --accent: #7fe0cd;       /* vert d'eau vif : liens, focus, étape en cours */
+  --ok: #5fd39a;
+  --warn: #ffc861;
+  --bad: #ff8f84;
+
+  /* Une couleur par pôle. Elles servent en pastilles PLEINES (texte encre),
+     donc les mêmes valeurs marchent dans les deux thèmes : un fond clair
+     avec du texte quasi noir est lisible sur fond profond comme sur blanc.
+     C'est la seule famille de couleurs vives du site — elle répond à la
+     question qu'on se pose le plus souvent : « c'est de quel pôle, ça ? » */
+  --pole-elec: #6fd3ff;   /* bleu ciel — l'électricité */
+  --pole-meca: #ffab5e;   /* orange — le métal, l'usinage */
+  --pole-soft: #c9a2ff;   /* violet — le code */
+
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --display: "Orbitron", var(--mono);
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --pill: 999px;
+}
+
+/* --- MODE PLEIN SOLEIL --------------------------------------------------
+   Activé par le bouton ☀ de l'entête (mémorisé dans le navigateur).
+   En plein soleil, ce qui compte est le CONTRASTE BRUT : fond quasi blanc,
+   encre quasi noire, aucune transparence ni flou (ils mangent du contraste
+   et de la lisibilité sous forte luminosité), pas de dégradé de fond.
+   Le bandeau vert d'eau et les pastilles noires RESTENT : la charte tient,
+   c'est seulement la zone de contenu qui bascule en clair.
+   On ne redéfinit que les jetons + les quelques surfaces translucides.
+   ---------------------------------------------------------------------- */
+:root[data-theme="soleil"] {
+  /* Toutes ces valeurs sont calées pour dépasser 7:1 (AAA) : sous le soleil,
+     se contenter de AA (4,5:1) revient à ne rien lire du tout. */
+  --paper: #06171d;              /* l'encre devient le texte */
+  --paper-soft: #2f4a52;
+  --line: #b9c9c8;
+  --panel: #ffffff;
+  --panel-2: #eef4f3;
+  --accent: #0b5f61;             /* menthe trop claire sur blanc → teal profond */
+  --ok: #0d5238;
+  --warn: #6b4600;
+  --bad: #a3231a;
+}
+:root[data-theme="soleil"] body {
+  background-color: #f2f6f5;
+  background-image: none;        /* un dégradé sous le soleil = contraste perdu */
+}
+:root[data-theme="soleil"] .panel,
+:root[data-theme="soleil"] .card,
+:root[data-theme="soleil"] .kcard {
+  background: #fff; border-color: var(--line);
+  backdrop-filter: none;         /* le flou coûte du GPU et du contraste */
+}
+/* Le liseré de pôle/colonne survit au plein soleil : c'est de l'information,
+   pas de la décoration. Seules les surfaces repassent en aplat. */
+:root[data-theme="soleil"] .panel { background-image: none; }
+:root[data-theme="soleil"] .kcol { background: #e4ecea; border-color: var(--line); }
+:root[data-theme="soleil"] .lifecycle a { background: #e4ecea; color: #365055; }
+:root[data-theme="soleil"] .lifecycle a.done { background: #c3d4d1; color: var(--paper); }
+/* L'étape consultée garde sa pastille encre : la règle .lifecycle a ci-dessus,
+   plus spécifique, la repeignait en clair sous son texte blanc. */
+:root[data-theme="soleil"] .lifecycle a.now { background: var(--ink); color: #fff; border-color: var(--ink); }
+/* Bleu ciel et teal clair : invisibles sur fond blanc → versions foncées. */
+:root[data-theme="soleil"] .chip.mv-sortie { color: #0a4f73; border-color: #0a4f73; }
+:root[data-theme="soleil"] td { border-bottom-color: var(--line); }
+:root[data-theme="soleil"] input,
+:root[data-theme="soleil"] select,
+:root[data-theme="soleil"] textarea { background: #fff; border-color: var(--line); }
+/* L'entête (bandeau vert d'eau) ne bascule PAS avec le thème — voir la
+   doctrine plus haut. Sans ces deux lignes, la règle générale select→blanc
+   ci-dessus regagnait la main en plein soleil (plus spécifique que .circle-
+   select/.pole-select) et les sélecteurs de l'entête redevenaient la boîte
+   blanche qu'on venait de corriger : d'où l'absence de continuité entre les
+   deux thèmes. */
+:root[data-theme="soleil"] .circle-select {
+  background: transparent; border-color: transparent; color: #1f5a5e;
+}
+:root[data-theme="soleil"] .pole-select {
+  background: rgba(4, 20, 26, .07); border-color: rgba(4, 20, 26, .35); color: var(--ink);
+}
+:root[data-theme="soleil"] .btn { border-color: #46605f; }
+:root[data-theme="soleil"] .btn-danger:hover,
+:root[data-theme="soleil"] a.chip.stage:hover { color: #fff; }
+:root[data-theme="soleil"] .messages .success { background: #e7f4ed; }
+:root[data-theme="soleil"] .messages .error   { background: #fceceb; }
+:root[data-theme="soleil"] .messages .warning { background: #fbf2e0; }
+:root[data-theme="soleil"] .pdf-frame { background: #c9d4d3; }
+
+* { box-sizing: border-box; }
+html { font-size: 16px; color-scheme: dark; }
+:root[data-theme="soleil"] { color-scheme: light; }
+body {
+  margin: 0; min-height: 100vh; color: var(--paper);
+  font-family: var(--sans); line-height: 1.55;
+  background-color: var(--deeper);
+  /* halo vert d'eau en haut + descente vers le profond : la planche POLARIS */
+  background-image:
+    radial-gradient(140% 46% at 50% 0%, rgba(158, 214, 205, .30) 0%, rgba(158, 214, 205, 0) 62%),
+    linear-gradient(180deg, #103943 0%, var(--deep) 45%, var(--deeper) 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+a:hover { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* --- Entête : le bandeau vert d'eau, texte NOIR (haut de planche) -------- */
+header.top {
+  background: linear-gradient(170deg, var(--mint) 0%, var(--mint-2) 100%);
+  color: var(--ink);
+  padding: .55rem .9rem; display: flex; flex-wrap: wrap;
+  /* center plutôt que baseline : la ligne mélange des <a>, <select> et
+     <button>, dont les fonts-métriques par défaut ne partagent pas la même
+     ligne de base — baseline les décalait les uns par rapport aux autres. */
+  align-items: center; gap: .4rem 1rem;
+}
+header.top .brand {
+  font-family: var(--display); font-weight: 800; letter-spacing: .10em;
+  text-transform: uppercase; font-size: .9rem; color: var(--ink);
+  text-decoration: none;
+}
+header.top .brand b { color: var(--teal); }
+/* a:hover (menthe vif) est illisible sur le bandeau menthe : encre à la place. */
+header.top a:hover { color: var(--ink); }
+nav.main { display: flex; flex-wrap: wrap; gap: .25rem .4rem; font-size: .82rem; }
+nav.main a {
+  display: inline-flex; align-items: center;
+  font-family: var(--mono); font-weight: 600; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--ink); text-decoration: none;
+  padding: .2rem .6rem; border-radius: var(--pill);
+}
+/* Survol = la pastille noire de la charte */
+nav.main a:hover, nav.main a.active { background: var(--ink); color: #fff; }
+
+/* --- Sélecteurs d'entête (cercle, pôle) -----------------------------------
+   Le select générique est blanc plein et en width:100% (cible tactile) —
+   mauvais choix dans une entête claire. Un <select> natif se dimensionne
+   aussi sur son option la plus longue et son chrome OS rend mal en dessous
+   de sa taille naturelle. On reprend donc tout le rendu à la main
+   (appearance:none + flèche dessinée + centrage flex du texte, qui règle au
+   passage le texte mal centré verticalement dans les <select>/<button>). */
+.circle-select, .pole-select {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  /* line-height:1 coupait le haut des accents des majuscules (ÉLEC) : un
+     <select> ne respecte pas toujours une ligne aussi serrée que sa propre
+     métrique native. Le centrage vertical vient déjà du flex ci-dessus, la
+     ligne peut donc respirer sans agrandir la boîte. */
+  line-height: 1.5; min-width: 0; min-height: 0;
+  font-family: var(--mono); font-weight: 600; letter-spacing: .05em;
+  text-transform: uppercase; cursor: pointer;
+  background-repeat: no-repeat; background-position: right .55rem center;
+  background-size: 8px 5px;
+}
+/* Cercle (PECS/HELICS) : prolonge la marque « CACS / … », pas un bouton à
+   part — texte d'accent sans cadre, comme le "/" de la marque. */
+.circle-select {
+  /* Boîte resserrée sur « PECS » : la flèche colle au texte plutôt que de
+     flotter au bord d'une boîte plus large que son contenu. */
+  width: 66px; background-color: transparent; border: 1px solid transparent;
+  color: var(--teal); font-size: .9rem; padding: .2rem .95rem .2rem .1rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%232f6f74'/%3E%3C/svg%3E");
+  background-position: right .3rem center;
+}
+.circle-select:hover { color: var(--ink); }
+/* Pôle (Élec/Méca/Soft) : une vraie pastille bouton, teinte sombre translucide
+   plutôt que le blanc plein des champs de formulaire. */
+.pole-select {
+  /* Même hauteur que les autres pastilles de l'entête (Chercher, quitter…,
+     qui héritent de .btn { min-height:44px }) : trop compressé, le texte
+     devenait difficile à lire. */
+  width: 140px; min-height: 44px; background-color: rgba(4, 20, 26, .07);
+  border: 1px solid rgba(4, 20, 26, .35); color: var(--ink); font-size: .72rem;
+  border-radius: var(--pill); padding: .3rem 1.5rem .3rem .65rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2304141a'/%3E%3C/svg%3E");
+}
+.pole-select:hover { background-color: rgba(4, 20, 26, .13); }
+/* Recherche transversale, casée dans l'entête à côté des pages principales :
+   flex-grow pour occuper le reste de la ligne quand la fenêtre est large,
+   plafonnée pour ne pas devenir un champ démesuré sur très grand écran. */
+.header-search { display: flex; gap: .3rem; flex: 1 1 220px; min-width: 0; max-width: 480px; }
+.header-search input {
+  width: auto; min-width: 0; min-height: 0; flex: 1 1 auto;
+  padding: .2rem .6rem; font-size: .72rem;
+}
+header.top .who {
+  margin-left: auto; font-family: var(--mono); font-size: .76rem;
+  color: #0d3b3d; display: flex; align-items: center; gap: .5rem;
+}
+/* .btn est pensé pour le fond sombre du corps de page (texte quasi blanc,
+   bordure translucide) : dans l'entête clair, c'était quasi invisible. On
+   recolore les boutons DE L'ENTÊTE spécifiquement, une fois pour toutes —
+   ça couvre Chercher, ☀ et quitter sans styler chacun au cas par cas. */
+header.top .btn { color: var(--ink); border-color: rgba(4, 20, 26, .35); }
+header.top .btn:hover { border-color: var(--ink); background: rgba(4, 20, 26, .08); color: var(--ink); }
+/* .btn-primary est déjà pensé pour être visible sur n'importe quel fond
+   (pastille encre + texte blanc) — la règle d'entête ci-dessus ne doit pas
+   lui repasser du texte encre sur son propre fond encre. */
+header.top .btn-primary, header.top .btn-primary:hover { color: #fff; }
+header.top .btn-primary:hover { background: var(--ink); border-color: var(--ink); }
+
+main { max-width: 1080px; margin: 0 auto; padding: 1.1rem .9rem 4rem; }
+
+/* --- Typographie -------------------------------------------------------- */
+h1, h2, h3 { line-height: 1.2; }
+h1 {
+  font-family: var(--display); font-weight: 800; font-size: 1.35rem;
+  letter-spacing: .06em; text-transform: uppercase; margin: .8rem 0;
+  overflow-wrap: anywhere;
+}
+h2 { font-size: 1.05rem; margin: 1.5rem 0 .6rem; }
+.eyebrow { /* étiquette de section, façon repère de planche */
+  font-family: var(--mono); font-weight: 600; font-size: .7rem;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--accent);
+}
+.data, td.num, .chip, .badge { font-family: var(--mono); }
+.muted { color: var(--paper-soft); font-size: .9rem; }
+
+/* --- Panneaux translucides (l'encart « caractéristiques ») --------------- */
+/* Léger dégradé plutôt qu'un aplat : les panneaux prennent la lumière du
+   haut de page, comme les planches POLARIS. Le mode plein soleil les
+   repasse en blanc franc (le dégradé y mangerait du contraste). */
+.panel {
+  background: linear-gradient(160deg, rgba(255,255,255,.11), rgba(255,255,255,.05));
+  border: 1px solid var(--line);
+  border-radius: 14px; padding: .9rem 1rem; margin: .8rem 0;
+  backdrop-filter: blur(8px);
+}
+table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+th { text-align: left; font-family: var(--mono); font-size: .7rem;
+     letter-spacing: .1em; text-transform: uppercase;
+     color: var(--paper-soft); border-bottom: 2px solid var(--line);
+     padding: .35rem .5rem; }
+td { padding: .5rem .5rem; border-bottom: 1px solid rgba(255, 255, 255, .09); }
+td.num { text-align: right; white-space: nowrap; }
+tr.missing td { color: var(--bad); }
+
+/* --- Boutons : la pastille noire est l'action ---------------------------- */
+.btn {
+  /* inline-flex + line-height:1 : centre le texte quel que soit l'élément
+     (a, button…) au lieu de dépendre de la métrique de ligne par défaut,
+     qui varie d'un élément à l'autre et laissait du texte mal centré. */
+  display: inline-flex; align-items: center; justify-content: center;
+  line-height: 1; border: 1px solid var(--line);
+  background: transparent; color: var(--paper);
+  font-family: var(--mono); font-weight: 600; font-size: .8rem;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: .45rem 1rem; border-radius: var(--pill);
+  cursor: pointer; text-decoration: none;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+/* --deep (bleu-vert profond) plutôt que --ink (quasi noir) : même famille de
+   teinte que le dégradé de l'entête, moins écrasant qu'un bouton tout noir. */
+/* Dégradé vert d'eau → profond : l'action principale attire l'œil sans
+   crier, et reprend la descente de couleur du fond de page. */
+.btn-primary { background: linear-gradient(160deg, var(--teal), var(--deep));
+               border-color: var(--deep); color: #fff; }
+.btn-primary:hover { background: var(--ink); border-color: var(--accent); color: #fff; }
+.btn-danger { border-color: var(--bad); color: var(--bad); }
+.btn-danger:hover { background: var(--bad); color: var(--ink); }
+.btn-sm { padding: .2rem .6rem; font-size: .72rem; }
+
+/* Champs clairs : la saisie en rafale doit rester ultra lisible */
+input, select, textarea {
+  font: inherit; color: var(--ink); background: rgba(255, 255, 255, .94);
+  border: 1px solid transparent; border-radius: 10px;
+  padding: .5rem .65rem; width: 100%;
+}
+/* Les champs sont clairs même en thème sombre : sans ceci, la liste native des
+   <select> hérite de color-scheme:dark et son survol passe en texte blanc sur
+   fond blanc (illisible). Le header garde son rendu par .circle/.pole-select. */
+select { color-scheme: light; }
+select option { background: #fff; color: var(--ink); }
+input::placeholder, textarea::placeholder { color: #5f7b80; }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent); outline: 2px solid rgba(127, 224, 205, .35);
+}
+label { display: block; margin: .75rem 0 .25rem; font-size: .78rem;
+        font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+        color: var(--paper-soft); }
+form .row { display: flex; gap: .8rem; flex-wrap: wrap; }
+form .row > div { flex: 1 1 180px; }
+/* Cibles tactiles ≥ 44 px : critère atelier, pas un détail. */
+.btn, input, select { min-height: 44px; }
+textarea { min-height: 7rem; }
+textarea.autosize { overflow: hidden; resize: none; }
+
+/* --- Chips de statut : petites pastilles --------------------------------- */
+.chip {
+  display: inline-block; font-size: .68rem; font-weight: 600;
+  padding: .16rem .6rem; border-radius: var(--pill);
+  border: 1px solid var(--line); color: var(--paper);
+  letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
+}
+.chip.ok { color: var(--ok); border-color: var(--ok); }
+.chip.warn { color: var(--warn); border-color: var(--warn); }
+.chip.bad { color: var(--bad); border-color: var(--bad); }
+
+/* --- SIGNATURE : rail de cycle de vie d'une carte ------------------------ */
+.lifecycle { display: flex; flex-wrap: wrap; gap: 0; margin: .7rem 0 1.1rem;
+             font-family: var(--mono); font-weight: 600; font-size: .66rem;
+             letter-spacing: .09em; text-transform: uppercase; }
+.lifecycle a {
+  position: relative; padding: .35rem .7rem .35rem 1rem;
+  color: var(--paper-soft); background: rgba(255, 255, 255, .06);
+  border: 1px solid var(--line); border-left: none;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%, 8px 50%);
+  text-decoration: none; cursor: pointer;
+}
+.lifecycle a:first-child { border-left: 1px solid var(--line);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%); }
+.lifecycle a:hover { background: rgba(255, 255, 255, .12); }
+.lifecycle a.done { color: var(--paper); background: rgba(255, 255, 255, .16); }
+/* L'étape CONSULTÉE = pastille noire, comme les encarts de la charte */
+.lifecycle a.now { color: #fff; background: var(--ink); border-color: var(--ink); }
+/* L'étape RÉELLE de l'élément = souligné accent. Distincte de .now : sur une
+   sous-page d'étape on regarde une étape (pastille) tout en devant voir où en
+   est vraiment la pièce (souligné). Les deux se superposent ailleurs. */
+.lifecycle a.actual { color: var(--accent); box-shadow: inset 0 -3px 0 var(--accent); }
+.lifecycle a.now.actual { color: #fff; }   /* la pastille garde son texte blanc */
+
+/* PÔLE : pastille PLEINE. Le contraste de forme (pleine vs contourée) fait
+   qu'on ne la confond jamais avec la pastille d'étape juste à côté, même du
+   coin de l'œil et même si les teintes se rapprochent. */
+.chip.pole { border-color: transparent; color: var(--ink); font-weight: 700; }
+.chip.pole-elec { background: var(--pole-elec); }
+.chip.pole-meca { background: var(--pole-meca); }
+.chip.pole-soft { background: var(--pole-soft); }
+
+/* Titres de section colorés par pôle sur la fiche projet. */
+.eyebrow.pole-elec { color: var(--pole-elec); }
+.eyebrow.pole-meca { color: var(--pole-meca); }
+.eyebrow.pole-soft { color: var(--pole-soft); }
+
+/* MOUVEMENTS DE STOCK : la couleur dit le sens avant qu'on lise le signe. */
+.chip.mv-entree     { color: var(--ok);        border-color: var(--ok); }
+.chip.mv-sortie     { color: var(--pole-elec); border-color: var(--pole-elec); }
+.chip.mv-inventaire { color: var(--warn);      border-color: var(--warn); }
+
+/* ÉTAPE DU CYCLE DE VIE : toujours ambre, partout où elle s'affiche —
+   tableau de bord, fiche projet, fil d'Ariane. Une seule classe pour une
+   seule notion : le libellé change (Conception, CAO, Test…), la couleur non.
+   C'est ce qui permet de repérer l'avancement d'un coup d'œil sans lire, et
+   ça évite les conditions par étape recopiées dans chaque template. */
+.chip.stage { color: var(--warn); border-color: var(--warn); text-decoration: none; }
+/* Version cliquable (fil d'Ariane) : le survol remplit la pastille. */
+a.chip.stage:hover { background: var(--warn); color: var(--ink); }
+
+/* --- Kanban -------------------------------------------------------------- */
+.kanban { display: grid; gap: .8rem; grid-template-columns: 1fr; margin: 1rem 0; }
+@media (min-width: 760px) { .kanban { grid-template-columns: repeat(4, 1fr); } }
+.kcol { background: rgba(0, 0, 0, .22); border: 1px solid var(--line);
+        border-top: 3px solid var(--paper-soft);
+        border-radius: 14px; padding: .6rem; min-height: 8rem; }
+/* Le liseré du haut donne l'état de la colonne avant même de lire le titre. */
+.kcol[data-col="doing"]   { border-top-color: var(--pole-elec); }
+.kcol[data-col="blocked"] { border-top-color: var(--warn); }
+.kcol[data-col="done"]    { border-top-color: var(--ok); }
+.kcol h3 { font-family: var(--mono); font-size: .7rem; margin: .2rem .2rem .6rem;
+           letter-spacing: .12em; text-transform: uppercase; color: var(--paper-soft); }
+.kcol[data-col="doing"] h3 { color: var(--pole-elec); }
+.kcol[data-col="blocked"] h3 { color: var(--warn); }
+.kcol[data-col="done"] h3 { color: var(--ok); }
+.kcard { background: var(--panel-2); border: 1px solid var(--line);
+         border-radius: 10px; padding: .55rem .65rem; margin-bottom: .5rem;
+         font-size: .9rem; cursor: grab; }
+.kcard .meta { font-family: var(--mono); font-size: .7rem; color: var(--paper-soft);
+               display: flex; justify-content: space-between; align-items: center;
+               gap: .4rem; margin-top: .3rem; }
+.kcard.sortable-ghost { opacity: .4; border-style: dashed; }
+.kcol form.add { display: flex; gap: .3rem; }
+.kcol form.add input { min-height: 38px; font-size: .85rem; }
+.kcol form.add .btn { min-height: 38px; }
+
+/* --- Fil d'activité ------------------------------------------------------ */
+.post { border-left: 2px solid var(--accent); padding: .2rem 0 .2rem 1rem;
+        margin: 1.2rem 0; }
+.post .head { font-family: var(--mono); font-size: .76rem; color: var(--paper-soft); }
+.post .head b { color: var(--paper); }
+.photos { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+.photos a img { height: 110px; border-radius: 10px; border: 1px solid var(--line);
+                display: block; }
+.comments { margin: .6rem 0 0 .5rem; font-size: .88rem; }
+.comments p { margin: .3rem 0; }
+.comments b { font-family: var(--mono); font-size: .76rem; }
+
+/* --- Grilles de vignettes (dashboard, documents) ------------------------- */
+.grid { display: grid; gap: .8rem; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 980px) { .grid.g3 { grid-template-columns: repeat(3, 1fr); } }
+.card { background: linear-gradient(160deg, rgba(255,255,255,.11), rgba(255,255,255,.05));
+        border: 1px solid var(--line);
+        border-radius: 14px; padding: .85rem .9rem; backdrop-filter: blur(8px); }
+.card h3 { margin: .1rem 0 .45rem; font-size: 1rem; }
+.doc-thumb { width: 100%; border: 1px solid var(--line); border-radius: 10px; }
+
+/* --- Messages flash ------------------------------------------------------ */
+.messages { margin: .6rem 0; }
+.messages div { padding: .55rem .85rem; border-radius: 12px; margin: .3rem 0;
+                font-size: .9rem; border: 1px solid; }
+.messages .success { color: var(--ok); border-color: var(--ok); background: rgba(95, 211, 154, .12); }
+.messages .error   { color: var(--bad); border-color: var(--bad); background: rgba(255, 143, 132, .12); }
+.messages .warning { color: var(--warn); border-color: var(--warn); background: rgba(255, 200, 97, .12); }
+
+/* --- Visionneuse PDF ------------------------------------------------------ */
+.pdf-frame { width: 100%; height: 78vh; border: 1px solid var(--line);
+             border-radius: 14px; background: #1b2b30; }
+
+/* --- Divers --------------------------------------------------------------- */
+.toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+           margin: .8rem 0; }
+.toolbar .spacer { flex: 1; }
+details.fold summary { cursor: pointer; font-family: var(--mono); font-weight: 600;
+                       font-size: .8rem; letter-spacing: .06em;
+                       text-transform: uppercase; padding: .45rem 0; }
+details.fold summary:hover { color: var(--accent); }
+
+/* --- Connexion : la page la plus proche de la planche --------------------- */
+.login-box { max-width: 390px; margin: 14vh auto; }
+.login-box .brand {
+  font-family: var(--display); font-weight: 800; font-size: 1.05rem;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--paper);
+}
+.login-box .brand b { color: var(--accent); }
+
+/* --- Saisie en rafale : UN formulaire, deux modes ------------------------
+   Les deux jeux de champs (passifs par valeur / actifs par MPN) ne diffèrent
+   que par trois champs : un seul formulaire, dont les radios `mode` montrent
+   ou cachent les blocs spécifiques. En CSS pur — un interrupteur ne mérite
+   pas de JavaScript, et le POST porte déjà le mode choisi. */
+.modesw { position: absolute; opacity: 0; pointer-events: none; }
+/* `~ *` en plus de `~` : la classe marche aussi sur un champ imbriqué dans
+   une ligne, pas seulement sur un bloc frère direct des radios. */
+#mode-passif:checked ~ .only-actif,  #mode-passif:checked ~ * .only-actif,
+#mode-actif:checked  ~ .only-passif, #mode-actif:checked  ~ * .only-passif {
+  display: none; }
+.modetabs label { margin: 0; padding: .35rem .9rem; border-radius: var(--pill);
+                  border: 1px solid var(--line); cursor: pointer;
+                  font-family: var(--mono); font-size: .75rem; }
+#mode-passif:checked ~ .modetabs label[for="mode-passif"],
+#mode-actif:checked  ~ .modetabs label[for="mode-actif"] {
+  background: var(--ink); color: #fff; border-color: var(--ink); }

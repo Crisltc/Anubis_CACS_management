@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Sortie rapide{% endblock %}
+{% block content %}
+<h1>Sortie rapide</h1>
+<p class="muted">Cherche le composant, tape la quantité prise, valide. Le stock
+est décompté immédiatement et le mouvement est signé de ton prénom.</p>
+
+<form method="get" class="toolbar">
+  <input type="search" name="q" value="{{ q }}" style="flex:1" autofocus
+         placeholder="10k, STM32F103, C14663…">
+  <button class="btn">Chercher</button>
+</form>
+
+{% for r in results %}
+<div class="panel" style="display:flex;gap:.8rem;align-items:center;flex-wrap:wrap">
+  <div style="flex:1;min-width:180px">
+    <b><a href="{{ r.get_absolute_url }}">{{ r.name }}</a></b><br>
+    <span class="muted data">{{ r.stock|floatformat:"-2" }} en stock
+      {% if r.location %}· {{ r.location.name }}{% endif %}</span>
+  </div>
+  <form method="post" action="{% url 'quick_out_submit' %}"
+        style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+    {% csrf_token %}
+    <input type="hidden" name="part_id" value="{{ r.pk }}">
+    <input type="hidden" name="back" value="{{ request.get_full_path }}">
+    <input name="qty" inputmode="decimal" placeholder="qté" style="width:80px" required>
+    {% comment %} Projet → carte en UN menu : optgroups natifs (projets),
+       options (cartes), plus « Autre ». Aucun JavaScript. {% endcomment %}
+    <select name="board" style="max-width:220px" aria-label="Projet puis carte">
+      <option value="">— Autre / hors projet —</option>
+      {% for p in projects %}
+      <optgroup label="{{ p.name }}">
+        {% for b in p.boards.all %}
+        <option value="{{ b.pk }}">{{ b.name }}</option>
+        {% empty %}<option value="" disabled>(aucune carte)</option>
+        {% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+    <input name="why" placeholder="détail (optionnel)" style="width:130px">
+    <button class="btn btn-primary">Sortir</button>
+  </form>
+</div>
+{% empty %}
+{% if q %}<p class="muted">Aucun composant trouvé pour « {{ q }} ».
+  <a href="{% url 'part_create' %}">L'ajouter au catalogue</a> ?</p>{% endif %}
+{% endfor %}
+{% endblock %}

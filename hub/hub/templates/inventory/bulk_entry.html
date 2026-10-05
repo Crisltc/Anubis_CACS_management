@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Saisie du stock{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">Saisie en rafale</h1>
+  <span class="spacer"></span>
+  <a class="btn" href="{% url 'part_list' %}">Catalogue</a>
+</div>
+<p class="muted">Pensée pour la soirée de saisie : mode, emplacement et boîtier
+restent mémorisés d'une ligne à l'autre — choisis-les une fois par bac, puis
+enchaîne valeur → quantité → Entrée. Un composant déjà connu est
+<b>réapprovisionné, pas dupliqué</b>.</p>
+
+{% comment %} UN SEUL formulaire : les deux modes ne diffèrent que par trois
+   champs, que les radios ci-dessous montrent ou cachent en CSS pur. Les
+   champs spécifiques ne portent donc PAS `required` — un champ caché et
+   requis empêche l'envoi. La vue valide de toute façon. {% endcomment %}
+<form method="post" action="{% url 'bulk_entry_submit' %}" class="panel">
+  {% csrf_token %}
+  <input class="modesw" type="radio" id="mode-passif" name="mode" value="passif"
+         {% if last.mode != "actif" %}checked{% endif %}>
+  <input class="modesw" type="radio" id="mode-actif" name="mode" value="actif"
+         {% if last.mode == "actif" %}checked{% endif %}>
+  <div class="toolbar modetabs">
+    <label for="mode-passif">Passifs (par valeur)</label>
+    <label for="mode-actif">Actifs / autres (par MPN)</label>
+  </div>
+
+  <div class="row only-passif">
+    <div>
+      <label for="kind">Type</label>
+      <select id="kind" name="kind">
+        <option value="RES">Résistance</option>
+        <option value="CAP">Condensateur</option>
+        <option value="IND">Inductance</option>
+      </select>
+    </div>
+    <div>
+      <label for="value">Valeur</label>
+      {# autofocus : après chaque ajout on revient ici — flux rafale. #}
+      <input id="value" name="value" placeholder="10k, 100n, 4.7u…" autofocus>
+    </div>
+    <div>
+      <label for="tolerance">Tolérance (%)</label>
+      <input id="tolerance" name="tolerance" placeholder="1">
+    </div>
+    <div>
+      <label for="package">Boîtier</label>
+      <input id="package" name="package" placeholder="0603"
+             value="{{ last.package|default:'0603' }}">
+    </div>
+  </div>
+
+  <div class="row only-actif">
+    <div>
+      <label for="mpn">MPN (réf fabricant) — devient le nom</label>
+      <input id="mpn" name="mpn" placeholder="STM32F103C8T6">
+    </div>
+    <div>
+      <label for="category">Catégorie</label>
+      <select id="category" name="category">
+        {% for key, label in categories %}
+        <option value="{{ key }}" {% if last.category == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="description">Description courte</label>
+      <input id="description" name="description" placeholder="MCU Cortex-M3 72 MHz LQFP48">
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="location">Emplacement</label>
+      <select id="location" name="location">
+        <option value="">— non rangé —</option>
+        {% for l in locations %}
+        <option value="{{ l.pk }}" {% if last.location == l.pk|stringformat:"s" %}selected{% endif %}>{{ l.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div><label for="qty">Quantité</label>
+      <input id="qty" name="qty" inputmode="decimal" required></div>
+    <div><label for="price">PU (EUR, optionnel)</label>
+      <input id="price" name="price" inputmode="decimal" placeholder="0.002"></div>
+  </div>
+
+  <div class="row">
+    <div><label for="supplier">Fournisseur</label>
+      <input id="supplier" name="supplier" placeholder="LCSC, Mouser…"></div>
+    <div><label for="sku">Réf fournisseur</label>
+      <input id="sku" name="sku" placeholder="C25804"></div>
+    <div><label for="supplier_url">Lien page produit</label>
+      <input id="supplier_url" name="supplier_url" type="url" placeholder="https://…"></div>
+    <div class="only-actif"><label for="datasheet_url">Lien datasheet</label>
+      <input id="datasheet_url" name="datasheet_url" type="url" placeholder="https://…"></div>
+  </div>
+
+
+  <p><button class="btn btn-primary">Ajouter au stock ⏎</button></p>
+</form>
+
+{% if recent %}
+<h2 class="eyebrow">Derniers saisis</h2>
+<div class="panel"><table>
+  {% for p in recent %}
+  <tr><td><a href="{{ p.get_absolute_url }}">{{ p.name }}</a></td>
+      <td class="data muted">{{ p.location.name|default:"—" }}</td>
+      <td class="num"><b>{{ p.stock|floatformat:"-2" }}</b></td></tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}

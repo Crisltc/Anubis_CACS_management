@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Recherche{% endblock %}
+{% block content %}
+<h1>Résultats pour « {{ q }} »</h1>
+{% if not q %}<p class="muted">Tape quelque chose dans la barre ci-dessus.</p>{% endif %}
+
+{% if parts %}
+<h2 class="eyebrow">Composants</h2>
+<div class="panel"><table>
+  <tr><th>Composant</th><th>Emplacement</th><th class="num">En stock</th></tr>
+  {% for p in parts %}
+  <tr>
+    <td><a href="{{ p.get_absolute_url }}">{{ p.name }}</a>
+        <span class="muted">{{ p.get_category_display }}</span></td>
+    <td class="data">{{ p.location.name|default:"—" }}</td>
+    <td class="num"><b>{{ p.stock|floatformat:"-2" }}</b></td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+
+{% comment %} Projets, cartes, documents, wiki et publications sortent tous du
+   même plein texte : une seule boucle, chaque modèle sachant son URL et son
+   libellé. Chercher « alimentation » ramène aussi les RAPPORTS PDF qui en
+   parlent — leur texte a été extrait à l'upload. {% endcomment %}
+{% for title, items in groups %}
+{% if items %}
+<h2 class="eyebrow">{{ title }}</h2>
+<div class="panel"><ul style="margin:0">
+  {% for item in items %}
+  <li><a href="{{ item.get_absolute_url }}">{{ item }}</a></li>
+  {% endfor %}
+</ul></div>
+{% endif %}
+{% endfor %}
+
+{% if q and not found %}
+<p class="muted">Rien trouvé. Essaie un autre terme, ou parcours le
+<a href="{% url 'part_list' %}">catalogue</a>.</p>
+{% endif %}
+{% endblock %}

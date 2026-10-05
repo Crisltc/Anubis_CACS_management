@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load hub_tags %}
+{% block title %}{{ board.name }} · {{ label }}{% endblock %}
+{% block content %}
+{% comment %} Sur cette page, l'étape « courante » du rail est l'étape
+   CONSULTÉE, pas le statut réel de la carte : on doit pouvoir remonter dans
+   l'historique sans que la navigation trahisse l'état effectif. {% endcomment %}
+{% include "_board_head.html" with viewed_stage=stage %}
+<div class="toolbar">
+  <h1 style="margin:0">{{ label }}</h1>
+  <span class="spacer"></span>
+  {% if bom_count %}<a class="btn" href="{% url 'feasibility' board.pk %}">Faisabilité</a>{% endif %}
+  <a class="btn" href="{% url 'board_edit' board.pk %}">Modifier</a>
+</div>
+
+{% if stage_obj.non_applicable %}
+<div class="messages"><div class="warning">
+  Étape marquée <b>non applicable</b>{% if stage_obj.na_reason %} — {{ stage_obj.na_reason }}{% endif %}.
+</div></div>
+{% endif %}
+
+<div class="grid">
+  <div class="card">
+    <p class="eyebrow">Notes de l'étape</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="notes">
+      <textarea id="stage-notes" name="notes" class="autosize"
+        placeholder="Décisions, réglages, pièges de cette étape… (Markdown)">{{ stage_obj.notes }}</textarea>
+      <p><button class="btn btn-primary">Enregistrer les notes</button></p>
+    </form>
+    {% if stage_obj.notes %}<div class="muted">{{ stage_obj.notes|md }}</div>{% endif %}
+  </div>
+
+  {% if can_na %}
+  <div class="card">
+    <p class="eyebrow">Applicabilité</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="na">
+      {% if stage_obj.non_applicable %}
+        <p class="muted">Cette étape est marquée non applicable. La réactiver
+        ne réactive PAS les suivantes : elles ont pu être marquées pour
+        d'autres motifs.</p>
+        <p><button class="btn">Rendre à nouveau applicable</button></p>
+      {% else %}
+        <input type="hidden" name="non_applicable" value="1">
+        <label for="na_reason">Raison (test échoué, trop d'erreurs de
+          conception/fabrication…)</label>
+        <input id="na_reason" name="na_reason" value="{{ stage_obj.na_reason }}">
+        <p class="muted">Les étapes suivantes seront marquées en cascade.</p>
+        <p><button class="btn btn-danger">Marquer non applicable</button></p>
+      {% endif %}
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<h2 class="eyebrow">Fil de l'étape</h2>
+{% include "projects/_posts.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Les notes varient énormément d'une étape à l'autre : une hauteur fixe
+// coupe les étapes bavardes et laisse du vide sur les courtes.
+(function () {
+  var el = document.getElementById('stage-notes');
+  if (!el) return;
+  var fit = function () { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
+  el.addEventListener('input', fit);
+  fit();   // aussi à l'ouverture
+})();
+</script>
+{% endblock %}

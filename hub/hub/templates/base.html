@@ -1,0 +1,92 @@
+{% comment %} ==========================================================================
+   Gabarit de TOUTES les pages, connexion comprise (l'entête est masquée tant
+   qu'il n'y a pas de session — pas de second squelette HTML à maintenir).
+   Charge : la feuille de style et htmx. SortableJS et EasyMDE sont chargés
+   par les deux pages qui en ont besoin, via {% block scripts %}.
+   ========================================================================= {% endcomment %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Hub{% endblock %} — Hub PECS</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'hub.css' %}">
+  {% comment %} Thème appliqué AVANT le premier rendu : sinon la page clignote
+     en sombre avant de passer en clair. {% endcomment %}
+  <script>(function(){var t=localStorage.getItem('hub-theme');
+    if(t){document.documentElement.dataset.theme=t;}})();</script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+
+{% if prenom %}
+<header class="top">
+  <a class="brand" href="{% url 'dashboard' %}">CACS <b>/</b></a>
+  {% comment %} Cercle : seul PECS existe aujourd'hui. Le <select> reste
+     ouvrable même si ses options ne le sont pas — un select désactivé rend mal.
+     Le PÔLE, lui, est un vrai filtre : les trois pôles partagent les mêmes
+     projets, on restreint l'affichage, on ne change pas de Hub. {% endcomment %}
+  <select class="circle-select" aria-label="Cercle">
+    <option selected>PECS</option>
+    <option disabled>HELICS (à venir)</option>
+  </select>
+  <select class="pole-select" aria-label="Filtrer par pôle"
+          onchange="location.href='{% url 'dashboard' %}' + (this.value ? '?pole=' + this.value : '')">
+    <option value="">Tous les pôles</option>
+    {% for key, label in poles %}
+    <option value="{{ key }}" {% if request.GET.pole == key %}selected{% endif %}>Pôle {{ label }}</option>
+    {% endfor %}
+  </select>
+  <nav class="main">
+    <a href="{% url 'dashboard' %}">Projets</a>
+    <a href="{% url 'part_list' %}">Catalogue</a>
+    <a href="{% url 'quick_out' %}">Sortie</a>
+    <a href="{% url 'bom_import_list' %}">BOM</a>
+    <a href="{% url 'document_list' %}">Documents</a>
+    <a href="{% url 'wiki_index' %}">Wiki</a>
+    <a href="{% url 'wiki_page' 'faq' %}">FAQ</a>
+  </nav>
+  <form action="{% url 'search' %}" method="get" class="header-search">
+    <input type="search" name="q" placeholder="Rechercher partout…"
+           value="{{ request.GET.q|default:'' }}" aria-label="Rechercher partout">
+    <button class="btn btn-sm btn-primary" type="submit">Chercher</button>
+  </form>
+  <span class="who">
+    {% include "_theme_toggle.html" %}
+    <span>{{ prenom }}{% if is_admin %} · admin{% endif %}</span>
+    <a href="{% url 'logout' %}" class="btn btn-sm">quitter</a>
+  </span>
+</header>
+{% endif %}
+
+<main>
+  {% if messages %}
+  <div class="messages">
+    {% for m in messages %}<div class="{{ m.tags }}">{{ m }}</div>{% endfor %}
+  </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+{% block scripts %}{% endblock %}
+{% comment %} HORS du bloc `scripts` : les pages qui le surchargent (kanban,
+   wiki) ne doivent pas faire disparaître la bascule de thème. {% endcomment %}
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle'), root = document.documentElement;
+  if (!btn) return;
+  var label = function () { btn.textContent = root.dataset.theme === 'soleil' ? '☾' : '☀'; };
+  label();
+  btn.addEventListener('click', function () {
+    if (root.dataset.theme === 'soleil') {
+      delete root.dataset.theme; localStorage.setItem('hub-theme', '');
+    } else {
+      root.dataset.theme = 'soleil'; localStorage.setItem('hub-theme', 'soleil');
+    }
+    label();
+  });
+})();
+</script>
+</body>
+</html>

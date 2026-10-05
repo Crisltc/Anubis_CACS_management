@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Historique — {{ page.title }}{% endblock %}
+{% block content %}
+<p class="eyebrow"><a href="{{ page.get_absolute_url }}">{{ page.title }}</a></p>
+<h1>Historique des révisions</h1>
+<div class="panel"><table>
+  <tr><th>Date</th><th>Auteur</th><th>Aperçu</th><th></th></tr>
+  {% for rev in revisions %}
+  <tr>
+    <td class="data">{{ rev.created|date:"d/m/Y H:i" }}</td>
+    <td>{{ rev.author }}</td>
+    <td class="muted">{{ rev.content_md|truncatechars:90 }}</td>
+    <td>
+      {% if forloop.first %}<span class="chip ok">actuelle</span>
+      {% else %}
+      {% comment %} Restaurer crée une NOUVELLE révision avec ce contenu :
+         l'historique se prolonge, il ne se réécrit jamais. {% endcomment %}
+      <form method="post" action="{% url 'wiki_restore' page.slug rev.pk %}">
+        {% csrf_token %}<button class="btn btn-sm">Restaurer</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

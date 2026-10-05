@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Imports BOM{% endblock %}
+{% block content %}
+<h1>Import de BOM</h1>
+
+<form method="post" action="{% url 'bom_import_upload' %}" class="panel"
+      enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="row">
+    <div>
+      <label for="board">Carte cible</label>
+      <select id="board" name="board" required>
+        <option value="">—</option>
+        {% for b in boards %}<option value="{{ b.pk }}">{{ b }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="profile">Profil de colonnes (si déjà mémorisé)</label>
+      <select id="profile" name="profile">
+        <option value="">Détection automatique</option>
+        {% for p in profiles %}<option value="{{ p.pk }}">{{ p }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="file">Fichier BOM (.xlsx ou .csv)</label>
+      <input id="file" type="file" name="file" accept=".xlsx,.xlsm,.csv,.txt" required>
+    </div>
+  </div>
+  <p class="muted">Le rapprochement se fait sur le
+  <a href="{% url 'part_list' %}">catalogue du pôle</a> : plus il est rempli,
+  moins il y a de lignes à arbitrer. Aucune API fournisseur n'est appelée —
+  un import ne peut donc pas échouer à cause d'un service extérieur.</p>
+  <p><button class="btn btn-primary">Importer</button></p>
+</form>
+
+{% if imports %}
+<h2 class="eyebrow">Historique</h2>
+<div class="panel"><table>
+  <tr><th>Fichier</th><th>Carte</th><th>Par</th><th>Le</th><th>État</th><th></th></tr>
+  {% for i in imports %}
+  <tr>
+    <td class="data">{{ i.filename }}</td>
+    <td>{{ i.board }}</td>
+    <td>{{ i.created_by }}</td>
+    <td class="data">{{ i.created|date:"d/m/Y" }}</td>
+    <td><span class="chip {% if i.status == 'done' %}ok{% endif %}">{{ i.get_status_display }}</span></td>
+    <td>{% if i.status == 'mapping' %}
+        <a class="btn btn-sm" href="{% url 'bom_mapping' i.pk %}">Mapper</a>
+        {% else %}
+        <a class="btn btn-sm" href="{% url 'bom_review' i.pk %}">{% if i.status == 'matching' %}Arbitrer{% else %}Voir{% endif %}</a>
+        {% endif %}</td>
+  </tr>
+  {% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}

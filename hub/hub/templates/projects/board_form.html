@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{% if board.pk %}Modifier {{ board.name }}{% else %}Nouvel élément{% endif %}{% endblock %}
+{% block content %}
+{% if board.pk %}
+  {% include "_board_head.html" %}
+{% else %}
+  <p class="eyebrow"><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></p>
+{% endif %}
+<h1>{% if board.pk %}Modifier « {{ board.name }} »{% else %}Nouvel élément{% endif %}</h1>
+<form method="post" class="panel">
+  {% csrf_token %}
+  <label for="name">Nom</label>
+  <input id="name" name="name" value="{{ board.name|default:'' }}" required autofocus
+         placeholder="Séquenceur v2, Coiffe, Firmware séquenceur…">
+  <div class="row">
+    <div>
+      <label for="pole">Pôle</label>
+      {% comment %} Le pôle détermine le rail : changer de pôle après coup
+         ramène l'étape au début du nouveau rail (voir board_form). {% endcomment %}
+      <select id="pole" name="pole">
+        {% for key, label in poles %}
+        <option value="{{ key }}" {% if board.pole == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="status">Étape du cycle de vie</label>
+      <select id="status" name="status">
+        {% for key, label in board.lifecycle %}
+        <option value="{{ key }}" {% if board.status == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="manager">Responsable</label>
+      <input id="manager" name="manager" value="{{ board.manager|default:'' }}">
+    </div>
+    <div>
+      <label for="target_date">Date cible</label>
+      <input id="target_date" name="target_date" type="date"
+             value="{{ board.target_date|date:'Y-m-d' }}">
+    </div>
+  </div>
+  <label for="notes">Notes (Markdown)</label>
+  <textarea id="notes" name="notes">{{ board.notes|default:'' }}</textarea>
+  <p><button class="btn btn-primary">Enregistrer</button>
+  {% if board.pk %}<a class="btn" href="{{ board.get_absolute_url }}">Annuler</a>{% endif %}</p>
+</form>
+{% endblock %}

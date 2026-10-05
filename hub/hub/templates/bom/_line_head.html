@@ -1,0 +1,6 @@
+{% comment %} Récapitulatif d'une ligne de BOM en cours d'arbitrage — identique
+   pour les lignes ambiguës et celles sans correspondance. Attend `line`. {% endcomment %}
+<p><b class="data">{{ line.designators|default:"(sans designator)" }}</b>
+   × {{ line.qty|floatformat:"-2" }} —
+   <span class="data">{{ line.value }} {{ line.package }} {{ line.mpn }}</span>
+   {% if line.lcsc %}<span class="chip">{{ line.lcsc }}</span>{% endif %}</p>

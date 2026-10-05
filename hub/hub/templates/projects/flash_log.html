@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Flash — {{ board.name }}{% endblock %}
+{% block content %}
+{% include "_board_head.html" %}
+<h1>Registre de flash</h1>
+<p class="muted">Qui a flashé quelle version, sur quelle carte, et est-ce que
+ça a marché. La version courante est <b>la dernière ligne réussie</b> : elle
+ne peut pas être fausse, il n'y a pas de champ à tenir à jour.</p>
+
+<div class="panel">
+  <p class="eyebrow">Version en place</p>
+  {% if firmware %}
+  <p class="data" style="font-size:2rem;margin:.2rem 0">{{ firmware.version }}
+    {% if firmware.git_ref %}<span class="chip">{{ firmware.git_ref }}</span>{% endif %}</p>
+  <p class="muted">flashée par <b>{{ firmware.author }}</b> le
+    {{ firmware.created|date:"d/m/Y H:i" }}
+    {% if firmware.target %}sur <a href="{{ firmware.target.get_absolute_url }}">{{ firmware.target.name }}</a>{% endif %}</p>
+  {% else %}
+  <p><span class="chip bad">aucun flash réussi</span></p>
+  <p class="muted">Personne ne sait ce qui tourne réellement sur la carte —
+  c'est exactement la question qu'on ne veut pas se poser sur le pas de tir.</p>
+  {% endif %}
+</div>
+
+<h2 class="eyebrow">Enregistrer un flash</h2>
+<form method="post" class="panel">
+  {% csrf_token %}
+  <div class="row">
+    <div><label for="version">Version</label>
+      <input id="version" name="version" required autofocus placeholder="v1.4.2"></div>
+    <div><label for="git_ref">Commit / tag</label>
+      <input id="git_ref" name="git_ref" placeholder="a3f9c21"></div>
+    <div>
+      <label for="target">Carte flashée</label>
+      <select id="target" name="target">
+        <option value="">— banc / hors carte suivie —</option>
+        {% for t in targets %}
+        <option value="{{ t.pk }}">{{ t.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <label for="notes">Contexte</label>
+  <input id="notes" name="notes" placeholder="avant test au banc, correctif watchdog…">
+  {% comment %} Coché par défaut : le cas courant est que ça marche. Décoché,
+     la ligne reste au registre mais ne devient PAS la version courante — un
+     échec ne doit pas écraser la dernière version connue comme bonne. {% endcomment %}
+  <p><label style="display:inline-flex;gap:.5rem;align-items:center;text-transform:none;letter-spacing:0;font-weight:normal">
+    <input type="checkbox" name="ok" value="1" checked style="width:auto;min-height:0">
+    Le flash a réussi</label></p>
+  <p><button class="btn btn-primary">Enregistrer au registre</button></p>
+</form>
+
+<h2 class="eyebrow">Historique</h2>
+<div class="panel"><table>
+  <tr><th>Date</th><th>Version</th><th>Commit</th><th>Carte</th><th>Par</th>
+      <th>Contexte</th><th></th></tr>
+  {% for f in flashes %}
+  <tr {% if not f.ok %}class="missing"{% endif %}>
+    <td class="data">{{ f.created|date:"d/m/Y H:i" }}</td>
+    <td class="data"><b>{{ f.version }}</b></td>
+    <td class="data muted">{{ f.git_ref|default:"—" }}</td>
+    <td class="data">{% if f.target %}<a href="{{ f.target.get_absolute_url }}">{{ f.target.name }}</a>{% else %}banc{% endif %}</td>
+    <td>{{ f.author }}</td>
+    <td class="muted">{{ f.notes }}</td>
+    <td>{% if f.ok %}<span class="chip ok">ok</span>
+        {% else %}<span class="chip bad">échec</span>{% endif %}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="7" class="muted">Registre vide. La première ligne à écrire
+    est celle du flash que tu viens de faire.</td></tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

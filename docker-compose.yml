@@ -1,0 +1,51 @@
+# ============================================================================
+# Hub PECS — pôle électronique, Cercle Aérospatial CentraleSupélec.
+# DEUX services : PostgreSQL + le Hub Django. Rien d'autre à héberger.
+# Cible : Raspberry Pi 4/5 (les deux images existent en arm64).
+# Aucun port public : on écoute sur 127.0.0.1, le HTTPS est délégué au
+# reverse proxy déjà en place (Caddy / nginx / Traefik, au choix de l'asso).
+# ============================================================================
+services:
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${HUB_DB_NAME:-hub}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    # Bridé volontairement : sur une petite machine, on ne laisse pas
+    # Postgres gonfler. 128 Mo est large pour quelques milliers de lignes.
+    command: postgres -c shared_buffers=128MB -c max_connections=20
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${HUB_DB_NAME:-hub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      # INDISPENSABLE : au tout premier démarrage Postgres déroule initdb ;
+      # sur carte SD ça dépasse largement 5×10 s. Sans ce délai les retries
+      # s'épuisent pendant l'init et le Hub refuse de démarrer.
+      start_period: 90s
+    deploy: {resources: {limits: {memory: 256M}}}
+
+  hub:
+    build: ./hub
+    restart: unless-stopped
+    depends_on:
+      db: {condition: service_healthy}
+    # Toutes les variables du .env sont passées telles quelles : une seule
+    # liste à tenir à jour (celle du .env.example), pas deux.
+    env_file: .env
+    environment:
+      DB_HOST: db
+    volumes:
+      # Photos WebP, PDF de la bibliothèque, statiques collectés.
+      - hub_media:/data
+    # Port local sur lequel le reverse proxy tape (HUB_PORT du .env).
+    ports: ["127.0.0.1:${HUB_PORT:-8081}:8000"]
+    deploy: {resources: {limits: {memory: 384M}}}
+
+volumes:
+  pgdata:
+  hub_media:

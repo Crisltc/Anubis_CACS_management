@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Catalogue{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">Catalogue</h1>
+  <span class="spacer"></span>
+  <a class="btn" href="{% url 'locations' %}">Emplacements</a>
+  <a class="btn" href="{% url 'bulk_entry' %}">Saisie en rafale</a>
+  <a class="btn btn-primary" href="{% url 'part_create' %}">Nouveau composant</a>
+</div>
+
+{% if low %}
+<div class="messages"><div class="warning">
+  {{ low|length }} composant(s) sous le seuil d'alerte :
+  {% for p in low %}<a href="{{ p.get_absolute_url }}">{{ p.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+</div></div>
+{% endif %}
+
+{# Filtres en GET : l'URL reste partageable. #}
+<form method="get" class="toolbar">
+  <input type="search" name="q" value="{{ q }}" style="flex:1"
+         placeholder="Nom, MPN, réf fournisseur…">
+  <select name="categorie" onchange="this.form.submit()">
+    <option value="">Toutes catégories</option>
+    {% for key, label in categories %}
+    <option value="{{ key }}" {% if current_category == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="emplacement" onchange="this.form.submit()">
+    <option value="">Tous emplacements</option>
+    {% for l in locations %}
+    <option value="{{ l.pk }}" {% if current_location == l.pk|stringformat:"s" %}selected{% endif %}>{{ l.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn">Filtrer</button>
+</form>
+
+<div class="panel"><table>
+  <tr><th>Composant</th><th>Emplacement</th><th class="num">Stock</th><th>Fournisseur</th></tr>
+  {% for p in parts %}
+  <tr {% if p.min_qty and p.stock < p.min_qty %}class="missing"{% endif %}>
+    <td><a href="{{ p.get_absolute_url }}">{{ p.name }}</a>
+        <span class="muted">{{ p.get_category_display }}</span></td>
+    <td class="data">{{ p.location.name|default:"—" }}</td>
+    <td class="num"><b>{{ p.stock|floatformat:"-2" }}</b></td>
+    <td class="data">
+      {% if p.supplier_url %}
+      <a href="{{ p.supplier_url }}" target="_blank" rel="noopener">{{ p.supplier|default:"fiche" }} ↗</a>
+      {% else %}{{ p.supplier|default:"—" }}{% endif %}
+      {% if p.sku %}<span class="muted">{{ p.sku }}</span>{% endif %}
+    </td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="4" class="muted">Aucun composant. Commence par
+    <a href="{% url 'bulk_entry' %}">la saisie en rafale</a> — c'est fait pour
+    enchaîner les références d'un même bac.</td></tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

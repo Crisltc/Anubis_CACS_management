@@ -1,0 +1,47 @@
+{% comment %} Fil d'activité : formulaire de publication + liste des posts.
+   Attend `posts`, et `board` OU `project` (plus `stage` sur une sous-page). {% endcomment %}
+{% load hub_tags %}
+<details class="fold panel">
+  <summary>✚ Publier une mise à jour</summary>
+  <form method="post" action="{% url 'post_create' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if board %}<input type="hidden" name="board_id" value="{{ board.pk }}">
+    {% elif project %}<input type="hidden" name="project_id" value="{{ project.pk }}">{% endif %}
+    {% if stage %}<input type="hidden" name="stage" value="{{ stage }}">{% endif %}
+    <label for="text_md">Quoi de neuf ? (Markdown, [[liens croisés]] acceptés)</label>
+    <textarea id="text_md" name="text_md"
+              placeholder="Cartes reçues de JLC, premier test d'alim OK…"></textarea>
+    <label for="photos">Photos (recompressées automatiquement — envoie tel quel
+      depuis le téléphone)</label>
+    <input id="photos" type="file" name="photos" accept="image/*" multiple>
+    <p><button class="btn btn-primary">Publier</button></p>
+  </form>
+</details>
+
+{% for post in posts %}
+<div class="post" id="post-{{ post.pk }}">
+  <p class="head"><b>{{ post.author }}</b> — {{ post.created|date:"d/m/Y H:i" }}
+    {% if is_admin %}
+    <form method="post" action="{% url 'post_delete' post.pk %}" style="display:inline"
+          onsubmit="return confirm('Supprimer cette publication ?')">
+      {% csrf_token %}<button class="btn btn-sm btn-danger">suppr.</button>
+    </form>
+    {% endif %}
+  </p>
+  {{ post.text_md|md }}
+  {% if post.photos.all %}
+  <div class="photos">
+    {% for photo in post.photos.all %}
+    {# La miniature 400 px s'affiche, le clic ouvre la version 1600 px. #}
+    <a href="{{ photo.image.url }}" target="_blank" rel="noopener">
+      <img src="{{ photo.thumb.url }}" alt="{{ photo.caption }}" loading="lazy"></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {# Cible htmx : l'ajout d'un commentaire remplace juste ce div. #}
+  <div id="comments-{{ post.pk }}">{% include "projects/_comments.html" %}</div>
+</div>
+{% empty %}
+<p class="muted">Aucune publication pour l'instant — la première photo de proto
+fera très bien l'affaire.</p>
+{% endfor %}

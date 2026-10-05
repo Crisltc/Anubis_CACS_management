@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Confirmer la suppression{% endblock %}
+{% block content %}
+<div class="panel">
+  <h1>Supprimer « {{ obj }} » ?</h1>
+  <p>Cette suppression est <b>définitive</b> (posts, photos et données liées
+  partent avec). Pour un projet terminé, préfère l'<b>archivage</b> : il garde
+  l'historique consultable pour les promos suivantes.</p>
+  <form method="post">{% csrf_token %}
+    <button class="btn btn-danger">Oui, supprimer définitivement</button>
+    <a class="btn" href="javascript:history.back()">Annuler</a>
+  </form>
+</div>
+{% endblock %}

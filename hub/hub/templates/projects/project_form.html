@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{% if project.pk %}Modifier {{ project.name }}{% else %}Nouveau projet{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if project.pk %}Modifier le projet{% else %}Nouveau projet{% endif %}</h1>
+<form method="post" class="panel">
+  {% csrf_token %}
+  <label for="name">Nom</label>
+  <input id="name" name="name" value="{{ project.name }}" required autofocus>
+  <div class="row">
+    <div>
+      <label for="campaign_year">Campagne</label>
+      <input id="campaign_year" name="campaign_year" placeholder="2026-2027"
+             value="{{ project.campaign_year }}">
+    </div>
+    {% if is_admin %}
+    <div>
+      <label for="status">Statut</label>
+      <select id="status" name="status">
+        {# Archiver = geler proprement : le projet reste consultable à vie. #}
+        {% for key, label in project.STATUS %}
+        <option value="{{ key }}" {% if project.status == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% elif project.pk %}
+    <div>
+      <label>Statut</label>
+      <p class="data" style="margin-top:.6rem">{{ project.get_status_display }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <label for="description">Description (Markdown)</label>
+  {% if project.pk %}
+  {% comment %} Lier une carte ou un composant sans taper [[...]] à la main :
+     on choisit dans la liste, le bouton insère le lien à la position du
+     curseur. La syntaxe manuelle reste valide pour qui préfère. {% endcomment %}
+  <div class="toolbar" style="margin-bottom:.4rem">
+    <select id="link-carte" style="flex:1">
+      <option value="">— Lier une carte du projet —</option>
+      {% for b in project.boards.all %}
+      <option value="{{ b.pk }}" data-name="{{ b.name }}">{{ b.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" class="btn btn-sm" data-insert="carte">Insérer</button>
+    <select id="link-piece" style="flex:1">
+      <option value="">— Lier un composant du catalogue —</option>
+      {% for p in parts %}
+      <option value="{{ p.pk }}" data-name="{{ p.name }}">{{ p.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" class="btn btn-sm" data-insert="piece">Insérer</button>
+  </div>
+  {% endif %}
+  <textarea id="description" name="description">{{ project.description }}</textarea>
+
+  <label for="team">Équipe (un nom par ligne, ou séparés par des virgules)</label>
+  <textarea id="team" name="team" placeholder="Alice&#10;Bob&#10;Camille">{{ project.team }}</textarea>
+
+  <p><button class="btn btn-primary">Enregistrer</button>
+  {% if project.pk and is_admin %}
+    <a class="btn btn-danger" href="{% url 'project_delete' project.slug %}">Supprimer définitivement</a>
+  {% endif %}</p>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Insère [[carte:ID|Nom]] / [[piece:ID|Nom]] à la position du curseur : ni
+// identifiant à connaître, ni crochets à taper. Un seul gestionnaire pour
+// les deux boutons, distingués par leur attribut data-insert.
+document.querySelectorAll('[data-insert]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var prefix = btn.dataset.insert;
+    var sel = document.getElementById('link-' + prefix);
+    if (!sel.value) return;
+    var ta = document.getElementById('description');
+    ta.setRangeText('[[' + prefix + ':' + sel.value + '|' +
+      sel.selectedOptions[0].dataset.name + ']] ',
+      ta.selectionStart, ta.selectionEnd, 'end');
+    ta.focus();
+    sel.value = '';
+  });
+});
+</script>
+{% endblock %}

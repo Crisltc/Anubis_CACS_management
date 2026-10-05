@@ -1,0 +1,11 @@
+# Versions épinglées en famille (mineure libre) : assez stable pour survivre
+# une année de passation, assez souple pour recevoir les correctifs.
+Django>=5.2,<5.3
+psycopg[binary]>=3.2   # pilote PostgreSQL
+gunicorn>=23.0         # serveur WSGI
+whitenoise>=6.7        # sert les statiques sans nginx dédié
+Pillow>=11.0           # recompression photo WebP
+markdown>=3.7          # rendu des posts / wiki
+bleach>=6.2            # nettoyage du HTML rendu — SÉCURITÉ, ne pas retirer
+openpyxl>=3.1          # lecture des BOM .xlsx
+PyMuPDF>=1.25          # texte + miniature des PDF (rend les rapports trouvables)

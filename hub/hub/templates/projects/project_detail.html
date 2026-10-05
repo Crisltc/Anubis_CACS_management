@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load hub_tags %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 style="margin:0">{{ project.name }}
+    {% if project.status == 'archive' %}<span class="chip">archivé</span>{% endif %}</h1>
+  <span class="spacer"></span>
+  {% if is_admin %}
+  {% comment %} Réservé à l'admin, comme le champ Statut du formulaire
+     d'édition (contrôlé côté serveur, pas seulement masqué ici). {% endcomment %}
+  <form method="post" action="{% url 'project_archive_toggle' project.slug %}"
+        onsubmit="return confirm('Changer le statut de « {{ project.name }} » ?')">
+    {% csrf_token %}
+    <button class="btn">{% if project.status == 'archive' %}Réactiver{% else %}Archiver{% endif %}</button>
+  </form>
+  {% endif %}
+  <a class="btn" href="{% url 'mass_balance' project.slug %}">Masse &amp; centrage</a>
+  <a class="btn" href="{% url 'project_edit' project.slug %}">Modifier</a>
+  <a class="btn btn-primary" href="{% url 'board_create' project.slug %}">Nouvel élément</a>
+</div>
+{% if project.campaign_year %}<p class="eyebrow">Campagne {{ project.campaign_year }}</p>{% endif %}
+
+<div class="grid">
+  <div class="card">
+    <p class="eyebrow">Description</p>
+    {% if project.description %}{{ project.description|md }}
+    {% else %}<p class="muted">Pas de description.
+      <a href="{% url 'project_edit' project.slug %}">En ajouter une</a>.</p>{% endif %}
+  </div>
+  <div class="card">
+    <p class="eyebrow">Équipe <span class="muted">({{ project.members|length }})</span></p>
+    {% if project.members %}
+    {# Encadré borné en hauteur : une équipe de 30 ne pousse pas la page. #}
+    <div style="max-height:180px;overflow:auto">
+      <ul style="margin:0;padding-left:1.1rem">
+        {% for m in project.members %}<li>{{ m }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% else %}<p class="muted">Personne renseigné·e.
+      <a href="{% url 'project_edit' project.slug %}">Ajouter l'équipe</a>.</p>{% endif %}
+  </div>
+</div>
+
+{% comment %} Un pôle par bloc : une fusée mélange cartes, pièces et modules,
+   et chacun veut retrouver les siens sans lire toute la liste. {% endcomment %}
+{% for key, label, boards in by_pole %}
+{% if boards %}
+<h2 class="eyebrow pole-{{ key }}">Pôle {{ label }}</h2>
+<div class="grid g3">
+  {% for b in boards %}
+  <div class="card">
+    <h3><a href="{{ b.get_absolute_url }}">{{ b.name }}</a></h3>
+    <p><span class="chip pole pole-{{ b.pole }}">{{ b.get_pole_display }}</span>
+       <span class="chip stage">{{ b.status_label }}</span>
+    {% if b.manager %}<span class="muted data">resp. {{ b.manager }}</span>{% endif %}</p>
+    {% if b.pole == 'soft' and b.current_firmware %}
+    <p class="muted data">en vol : {{ b.current_firmware.version }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+{% if not project.boards.all %}
+<p class="muted">Pas encore d'élément. Une fusée en a au moins trois : une
+carte, une pièce, un firmware.</p>
+{% endif %}
+
+{% if project.documents.all %}
+<h2 class="eyebrow">Documents</h2>
+<ul>{% for d in project.documents.all %}
+  <li><a href="{{ d.get_absolute_url }}">{{ d.title }}</a>
+    <span class="muted">({{ d.get_doc_type_display }})</span></li>
+{% endfor %}</ul>
+{% endif %}
+
+<h2 class="eyebrow">Fil du projet</h2>
+{% include "projects/_posts.html" %}
+{% endblock %}

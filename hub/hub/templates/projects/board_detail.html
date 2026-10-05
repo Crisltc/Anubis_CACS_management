@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load hub_tags %}
+{% block title %}{{ board.name }}{% endblock %}
+{% block content %}
+{% include "_board_head.html" with hide_board_link=True %}
+<div class="toolbar">
+  <h1 style="margin:0">{{ board.name }}</h1>
+  <span class="chip pole pole-{{ board.pole }}">{{ board.get_pole_display }}</span>
+  <span class="spacer"></span>
+  {% if board.pole == 'meca' %}
+  <a class="btn" href="{% url 'mass_balance' board.project.slug %}">Masse &amp; centrage</a>
+  {% endif %}
+  {% if bom_count %}<a class="btn" href="{% url 'feasibility' board.pk %}">Faisabilité</a>{% endif %}
+  <a class="btn" href="{% url 'board_edit' board.pk %}">Modifier</a>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <p class="eyebrow">Fiche</p>
+    {% if board.manager %}<p class="data">Responsable : {{ board.manager }}</p>{% endif %}
+    {% if board.target_date %}<p class="data">Date cible : {{ board.target_date|date:"d/m/Y" }}</p>{% endif %}
+    {{ board.notes|md }}
+  </div>
+  {% comment %} Le second encart dépend du pôle : une nomenclature n'a pas de
+     sens pour un module logiciel, et une version de firmware n'en a pas pour
+     une pièce usinée. {% endcomment %}
+  {% if board.pole == 'soft' %}
+  <div class="card">
+    <p class="eyebrow">Firmware</p>
+    {% if firmware %}
+      <p class="data" style="font-size:1.6rem;margin:.2rem 0">{{ firmware.version }}</p>
+      <p class="muted">flashé par {{ firmware.author }} le
+        {{ firmware.created|date:"d/m/Y" }}
+        {% if firmware.target %}sur <a href="{{ firmware.target.get_absolute_url }}">{{ firmware.target.name }}</a>{% endif %}
+        {% if firmware.git_ref %}<br><span class="data">{{ firmware.git_ref }}</span>{% endif %}</p>
+    {% else %}
+      <p class="muted">Aucun flash réussi enregistré : personne ne sait ce qui
+      tourne réellement sur la carte.</p>
+    {% endif %}
+    <p><a class="btn btn-sm" href="{% url 'flash_log' board.pk %}">Registre de flash</a></p>
+  </div>
+  {% else %}
+  <div class="card">
+    <p class="eyebrow">Nomenclature</p>
+    {% if bom_count %}
+      <p class="data" style="font-size:1.6rem;margin:.2rem 0">{{ bom_count }}
+        <span class="muted" style="font-size:.9rem">composant(s)</span></p>
+      <p>{% if bom_missing %}
+        <span class="chip bad">{{ bom_missing }} manquant(s) pour 1 exemplaire</span>
+      {% else %}<span class="chip ok">tout en stock pour 1 exemplaire</span>{% endif %}</p>
+      <p><a class="btn btn-sm" href="{% url 'feasibility' board.pk %}">Faisabilité pour N exemplaires</a></p>
+    {% else %}
+      <p class="muted">Pas encore de nomenclature.
+      <a href="{% url 'bom_import_list' %}">Importe la BOM</a> pour débloquer
+      la faisabilité et la liste d'achat.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<h2 class="eyebrow">Kanban</h2>
+{% comment %} Chaque colonne est une liste SortableJS ; à chaque dépôt l'état
+   COMPLET du tableau part en JSON vers task_move (script en bas de page). {% endcomment %}
+<div class="kanban" id="kanban" data-move-url="{% url 'task_move' board.pk %}">
+  {% for key, label, tasks in kanban_columns %}
+  <div class="kcol" data-col="{{ key }}">
+    <h3>{{ label }} <span class="muted">({{ tasks|length }})</span></h3>
+    <div class="klist" data-col="{{ key }}">
+      {% for task in tasks %}
+      <div class="kcard" data-id="{{ task.pk }}">
+        {{ task.title }}
+        <div class="meta">
+          <span>{{ task.assignee }}</span>
+          <span>{% if task.target_date %}{{ task.target_date|date:"d/m" }}{% endif %}</span>
+          <form method="post" action="{% url 'task_delete' task.pk %}"
+                onsubmit="return confirm('Supprimer cette tâche ?')">
+            {% csrf_token %}<button class="btn btn-sm" title="Supprimer">×</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <form class="add" method="post" action="{% url 'task_create' board.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="column" value="{{ key }}">
+      <input name="title" placeholder="Ajouter…" aria-label="Nouvelle tâche">
+      <button class="btn btn-sm">+</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+
+<h2 class="eyebrow">Fil de la carte</h2>
+{% include "projects/_posts.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+// À chaque dépôt on renvoie l'état complet {colonne: [ids ordonnés]} :
+// idempotent, et trivial à déboguer dans l'onglet réseau.
+const kanban = document.getElementById('kanban');
+const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+document.querySelectorAll('.klist').forEach(list => {
+  new Sortable(list, {
+    group: 'kanban', animation: 120, ghostClass: 'sortable-ghost',
+    onEnd: () => {
+      const state = {};
+      document.querySelectorAll('.klist').forEach(l => {
+        state[l.dataset.col] =
+          [...l.querySelectorAll('.kcard')].map(c => parseInt(c.dataset.id));
+      });
+      fetch(kanban.dataset.moveUrl, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+        body: JSON.stringify(state),
+      });
+    },
+  });
+});
+</script>
+{% endblock %}

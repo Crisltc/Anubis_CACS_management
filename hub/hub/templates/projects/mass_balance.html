@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Masse &amp; centrage — {{ project.name }}{% endblock %}
+{% block content %}
+<p class="eyebrow"><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></p>
+<h1>Masse &amp; centrage</h1>
+<p class="muted">Chaque pièce est pesée puis inscrite ici avec sa position
+<b>depuis la pointe</b>. La masse totale et le CG sont la <b>somme</b> de ces
+lignes — c'est la fusée réelle, pas celle de la CAO.</p>
+
+<div class="grid g3">
+  <div class="card">
+    <p class="eyebrow">Masse au décollage</p>
+    <p class="data" style="font-size:2rem;margin:.2rem 0">
+      {{ total_g|floatformat:"-1" }} <span class="muted" style="font-size:.9rem">g</span></p>
+    <p class="muted">{{ items|length }} pièce(s) pesée(s)</p>
+  </div>
+  <div class="card">
+    <p class="eyebrow">Centre de gravité</p>
+    <p class="data" style="font-size:2rem;margin:.2rem 0">
+      {% if cg %}{{ cg|floatformat:"-1" }} <span class="muted" style="font-size:.9rem">mm</span>
+      {% else %}—{% endif %}</p>
+    <p class="muted">depuis la pointe</p>
+  </div>
+  <div class="card">
+    <p class="eyebrow">Marge statique</p>
+    <p class="data" style="font-size:2rem;margin:.2rem 0">
+      {% if margin %}{{ margin|floatformat:"-2" }}
+        <span class="muted" style="font-size:.9rem">calibres</span>
+      {% else %}—{% endif %}</p>
+    {% if margin %}
+      {% if unstable %}
+      <p><span class="chip bad">sous le seuil de {{ project.min_margin|floatformat:"-2" }}</span></p>
+      {% else %}
+      <p><span class="chip ok">≥ {{ project.min_margin|floatformat:"-2" }} calibres</span></p>
+      {% endif %}
+    {% else %}
+    <p class="muted">Renseigne le calibre et le CP ci-dessous.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if unstable %}
+<div class="messages"><div class="error">
+  Marge statique insuffisante : le CP est trop proche du CG, la fusée risque
+  d'être <b>instable</b>. Vérifie le cahier des charges de la campagne — c'est
+  lui qui fait foi, pas ce seuil.
+</div></div>
+{% endif %}
+
+{% comment %} Le Hub ne calcule PAS l'aérodynamique : OpenRocket le fait déjà.
+   On y recopie le CP, le Hub apporte les masses réellement pesées. {% endcomment %}
+<details class="fold panel">
+  <summary>Géométrie de la fusée (calibre, centre de poussée, seuil)</summary>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="geometrie">
+    <div class="row">
+      <div><label for="diameter_mm">Calibre (mm)</label>
+        <input id="diameter_mm" name="diameter_mm" inputmode="decimal"
+               value="{{ project.diameter_mm|default_if_none:'' }}"></div>
+      <div><label for="cp_mm">Centre de poussée (mm depuis la pointe)</label>
+        <input id="cp_mm" name="cp_mm" inputmode="decimal"
+               value="{{ project.cp_mm|default_if_none:'' }}"
+               placeholder="relevé dans OpenRocket"></div>
+      <div><label for="min_margin">Marge minimale (calibres)</label>
+        <input id="min_margin" name="min_margin" inputmode="decimal"
+               value="{{ project.min_margin|floatformat:'-2' }}"></div>
+    </div>
+    <p class="muted">Le CP vient d'OpenRocket : le Hub ne fait pas
+    d'aérodynamique, il tient le budget de masse.</p>
+    <p><button class="btn btn-primary">Enregistrer la géométrie</button></p>
+  </form>
+</details>
+
+<h2 class="eyebrow">Ajouter une pesée</h2>
+{% comment %} L'élément vient EN PREMIER : le choisir suffit, son nom devient
+   la désignation. On évite ainsi les « Coiffe » / « coiffe » / « Coife » qui
+   se ressemblent dans le tableau sans être la même chose. La saisie libre
+   reste là pour ce qui n'est pas un élément suivi — moteur, parachute,
+   lest — et pour préciser (« Coiffe + porte-parachute »). {% endcomment %}
+<form method="post" class="panel">
+  {% csrf_token %}
+  <div class="row">
+    <div style="flex:2 1 260px">
+      <label for="board">Élément du projet</label>
+      <select id="board" name="board" autofocus>
+        <option value="">— autre (moteur, parachute, lest…) —</option>
+        {% for b in boards %}
+        <option value="{{ b.pk }}">{{ b.get_pole_display }} · {{ b.name }}{% if b.n_masses %} — déjà pesé{% if b.n_masses > 1 %} ×{{ b.n_masses }}{% endif %}{% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div><label for="mass_g">Masse pesée (g)</label>
+      <input id="mass_g" name="mass_g" inputmode="decimal" required></div>
+    <div><label for="position_mm">Position (mm depuis la pointe)</label>
+      <input id="position_mm" name="position_mm" inputmode="decimal" required></div>
+  </div>
+  <label for="name">Désignation</label>
+  <input id="name" name="name"
+         placeholder="laisser vide pour reprendre le nom de l'élément — ou : Moteur Pro54-5G">
+  <label for="note">Précision (optionnel)</label>
+  <input id="note" name="note" placeholder="avec visserie, sans parachute…">
+  <p class="muted">« Déjà pesé » dans la liste : vérifie que tu n'ajoutes pas
+  une seconde fois la même pièce — c'est l'erreur qui fausse un budget de
+  masse sans que rien n'ait l'air cassé.</p>
+  <p><button class="btn btn-primary">Ajouter au budget de masse</button></p>
+</form>
+
+<h2 class="eyebrow">Budget de masse</h2>
+<div class="panel"><table>
+  <tr><th>Désignation</th><th>Élément</th><th class="num">Position</th>
+      <th class="num">Masse</th><th class="num">% du total</th><th>Pesée par</th>
+      {% if is_admin %}<th></th>{% endif %}</tr>
+  {% for i in items %}
+  <tr>
+    <td>{{ i.name }}{% if i.note %}<br><span class="muted">{{ i.note }}</span>{% endif %}</td>
+    <td class="data muted">{% if i.board %}<a href="{{ i.board.get_absolute_url }}">{{ i.board.name }}</a>{% else %}—{% endif %}</td>
+    <td class="num">{{ i.position_mm|floatformat:"-1" }} mm</td>
+    <td class="num"><b>{{ i.mass_g|floatformat:"-1" }} g</b></td>
+    <td class="num muted">{% widthratio i.mass_g total_g 100 %} %</td>
+    <td class="muted">{{ i.author }}</td>
+    {% if is_admin %}
+    <td><form method="post" action="{% url 'mass_item_delete' i.pk %}"
+          onsubmit="return confirm('Retirer cette pesée ? Le CG sera recalculé.')">
+        {% csrf_token %}<button class="btn btn-sm btn-danger">×</button></form></td>
+    {% endif %}
+  </tr>
+  {% empty %}
+  <tr><td colspan="7" class="muted">Aucune pesée. Commence par les gros
+    postes — moteur, structure, case élec : ce sont eux qui font le CG.</td></tr>
+  {% endfor %}
+</table></div>
+<p class="muted">Le total affiché plus haut est exactement la somme de la
+colonne « Masse » — comme le stock est la somme de ses mouvements.</p>
+{% endblock %}

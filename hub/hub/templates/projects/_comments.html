@@ -1,0 +1,14 @@
+{% comment %} Fragment htmx : commentaires d'un post + champ d'ajout.
+   Renvoyé tel quel par comment_create, qui remplace #comments-<pk>. {% endcomment %}
+<div class="comments">
+  {% for c in post.comments.all %}
+  <p><b>{{ c.author }}</b> · {{ c.created|date:"d/m H:i" }} — {{ c.text }}</p>
+  {% endfor %}
+  <form hx-post="{% url 'comment_create' post.pk %}"
+        hx-target="#comments-{{ post.pk }}" hx-swap="innerHTML"
+        style="display:flex;gap:.4rem">
+    {% csrf_token %}
+    <input name="text" placeholder="Commenter…" style="flex:1">
+    <button class="btn btn-sm">OK</button>
+  </form>
+</div>

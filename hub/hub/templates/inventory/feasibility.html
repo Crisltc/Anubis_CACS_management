@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Faisabilité — {{ board.name }}{% endblock %}
+{% block content %}
+{% include "_board_head.html" %}
+<h1>Faisabilité d'assemblage</h1>
+
+{% comment %} Deux formulaires SÉPARÉS (GET recalcul / POST sortie) : les
+   imbriquer serait du HTML invalide. {% endcomment %}
+<div class="toolbar">
+  <form method="get" style="display:flex;gap:.5rem;align-items:center">
+    <label style="margin:0">Exemplaires :</label>
+    <input name="n" inputmode="numeric" value="{{ n|floatformat:'-2' }}" style="width:90px">
+    <button class="btn">Recalculer</button>
+  </form>
+  <span class="spacer"></span>
+  {% if rows %}
+  <a class="btn" href="{% url 'shortage_csv' board.pk %}?n={{ n|floatformat:'-2' }}">Liste d'achat (CSV)</a>
+  <form method="post" action="{% url 'consume_bom' board.pk %}"
+        onsubmit="return confirm('Sortir du stock tous les composants de cette carte ?')">
+    {% csrf_token %}<input type="hidden" name="n" value="{{ n|floatformat:'-2' }}">
+    <button class="btn btn-primary" {% if total_missing %}disabled
+      title="Des composants manquent"{% endif %}>Sortir du stock</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if rows %}
+<p>{% if total_missing %}
+  <span class="chip bad">{{ total_missing }} référence(s) manquante(s)</span>
+{% else %}
+  <span class="chip ok">GO — tout est en stock pour {{ n|floatformat:"-2" }} carte(s)</span>
+{% endif %}</p>
+
+<div class="panel"><table>
+  <tr><th>Composant</th><th>Designators</th>
+      <th class="num">Requis</th><th class="num">Dispo</th><th class="num">Manque</th>
+      <th>Fournisseur</th></tr>
+  {% for r in rows %}
+  <tr {% if r.missing %}class="missing"{% endif %}>
+    <td><a href="{{ r.part.get_absolute_url }}">{{ r.part.name }}</a></td>
+    <td class="data muted">{{ r.line.designators }}</td>
+    <td class="num">{{ r.required|floatformat:"-2" }}</td>
+    <td class="num">{{ r.available|floatformat:"-2" }}</td>
+    <td class="num">{% if r.missing %}{{ r.missing|floatformat:"-2" }}{% else %}—{% endif %}</td>
+    <td class="data">
+      {% if r.part.supplier_url %}
+      <a href="{{ r.part.supplier_url }}" target="_blank" rel="noopener">{{ r.part.supplier|default:"fiche" }} ↗</a>
+      {% else %}{{ r.part.supplier|default:"—" }}{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table></div>
+<p class="muted">« Sortir du stock » décompte réellement les composants au
+moment où tu montes la carte — rien n'est bloqué à l'avance. Le décompte est
+tout-ou-rien : s'il manque une seule référence, rien n'est sorti.</p>
+{% else %}
+<p class="muted">Aucune nomenclature sur cette carte.
+Passe d'abord par <a href="{% url 'bom_import_list' %}">l'import BOM</a>.</p>
+{% endif %}
+{% endblock %}

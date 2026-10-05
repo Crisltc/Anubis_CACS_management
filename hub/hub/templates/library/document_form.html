@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Déposer un document{% endblock %}
+{% block content %}
+<h1>Déposer un document</h1>
+<p class="muted">Le PDF arrive déjà compilé (LaTeX sur ta machine ou Overleaf) ;
+le Hub en extrait le texte pour la recherche et fabrique la miniature. Joins le
+zip des sources : un PDF seul n'est pas modifiable par tes successeurs.</p>
+<form method="post" class="panel" enctype="multipart/form-data">
+  {% csrf_token %}
+  <label for="title">Titre</label>
+  <input id="title" name="title" required autofocus>
+  <div class="row">
+    <div>
+      <label for="doc_type">Type</label>
+      <select id="doc_type" name="doc_type">
+        {% for key, label in types %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="project">Projet lié (optionnel)</label>
+      <select id="project" name="project">
+        <option value="">—</option>
+        {% for p in projects %}<option value="{{ p.pk }}">{{ p.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="date">Date du document</label>
+      <input id="date" name="date" type="date">
+    </div>
+  </div>
+  <label for="authors">Auteur·e·s</label>
+  <input id="authors" name="authors" placeholder="Prénoms Noms, séparés par des virgules">
+  <label for="pdf">Fichier PDF</label>
+  <input id="pdf" type="file" name="pdf" accept="application/pdf" required>
+  <label for="source_zip">Sources LaTeX (zip, recommandé)</label>
+  <input id="source_zip" type="file" name="source_zip" accept=".zip">
+  <p><button class="btn btn-primary">Déposer</button></p>
+</form>
+{% endblock %}

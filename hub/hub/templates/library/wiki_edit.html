@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{% if page %}Modifier {{ page.title }}{% else %}Nouvelle page{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if page %}Modifier la page{% else %}Nouvelle page de wiki{% endif %}</h1>
+<form method="post" class="panel" enctype="multipart/form-data">
+  {% csrf_token %}
+  <label for="title">Titre</label>
+  <input id="title" name="title" value="{{ page.title|default:'' }}" required>
+  <label for="content_md">Contenu</label>
+  {% comment %} EasyMDE transforme ce textarea en éditeur Markdown avec aperçu.
+     Les liens croisés [[projet:slug]], [[piece:123]], [[texte]] marchent ici. {% endcomment %}
+  <textarea id="content_md" name="content_md">{{ page.content_md|default:'' }}</textarea>
+  <label for="pdf">PDF à intégrer (optionnel — affiché directement sur la page)</label>
+  <input id="pdf" type="file" name="pdf" accept="application/pdf">
+  {% if page.pdf %}<p class="muted">PDF actuel : {{ page.pdf.name }}</p>{% endif %}
+  <p><button class="btn btn-primary">Enregistrer</button>
+     <span class="muted">Chaque enregistrement crée une révision : rien ne se perd.</span></p>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+new EasyMDE({
+  element: document.getElementById('content_md'),
+  spellChecker: false,   // le correcteur anglais soulignerait tout le français
+  status: false,
+  placeholder: "Procédure, réglages, pièges connus… Markdown + [[liens croisés]].",
+});
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Emplacements{% endblock %}
+{% block content %}
+<p class="eyebrow"><a href="{% url 'part_list' %}">Catalogue</a></p>
+<h1>Emplacements</h1>
+<p class="muted">Un composant doit être trouvable par un première-année qui n'a
+jamais mis les pieds dans le local, rien qu'avec le nom de l'emplacement.
+Écris-les en clair : « Armoire A / Bac 3 », « Carnet R 0603 / Page 2 ».</p>
+
+<form method="post" class="panel">
+  {% csrf_token %}
+  <div class="row">
+    <div><label for="name">Nouvel emplacement</label>
+      <input id="name" name="name" required placeholder="Armoire A / Bac 3"></div>
+    <div><label for="note">Précision (optionnel)</label>
+      <input id="note" name="note" placeholder="au-dessus de l'établi"></div>
+  </div>
+  <p><button class="btn btn-primary">Ajouter</button></p>
+</form>
+
+<div class="panel"><table>
+  <tr><th>Emplacement</th><th>Précision</th><th class="num">Composants</th></tr>
+  {% for l in locations %}
+  <tr>
+    <td class="data"><a href="{% url 'part_list' %}?emplacement={{ l.pk }}">{{ l.name }}</a></td>
+    <td class="muted">{{ l.note }}</td>
+    <td class="num">{{ l.n }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="3" class="muted">Aucun emplacement pour l'instant.</td></tr>
+  {% endfor %}
+</table></div>
+{% endblock %}

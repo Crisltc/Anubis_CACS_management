@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Colonnes — {{ imp.filename }}{% endblock %}
+{% block content %}
+<p class="eyebrow">{{ imp.board }}</p>
+<h1>À quoi correspondent les colonnes ?</h1>
+<p class="muted">Le Hub a fait une proposition — corrige si besoin, puis donne
+un nom au profil pour que la prochaine BOM du même outil s'importe sans
+reconfigurer.</p>
+
+<form method="post" class="panel">
+  {% csrf_token %}
+  <table>
+    <tr><th>Colonne du fichier</th><th>Champ</th><th>Aperçu</th></tr>
+    {% for col in columns %}
+    <tr>
+      <td class="data">{{ col.header }}</td>
+      <td>
+        {# Chaque select est nommé col_<index> ; la vue reconstruit le mapping. #}
+        <select name="col_{{ forloop.counter0 }}">
+          {% for key, label in fields %}
+          <option value="{{ key }}" {% if col.proposed == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td class="muted data" style="font-size:.78rem">{{ col.sample|join:" · " }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <label for="save_profile">Mémoriser sous (nom du profil, optionnel)</label>
+  <input id="save_profile" name="save_profile" placeholder="EasyEDA standard">
+  <p><button class="btn btn-primary">Lancer le rapprochement</button></p>
+</form>
+{% endblock %}
