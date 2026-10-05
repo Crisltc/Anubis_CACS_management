@@ -1,9 +1,35 @@
-# Hub PECS — pôles élec, méca et soft · CACS
+# Anubis — Hub de management du CACS
 
-Plateforme interne des trois pôles — **élec, méca, soft** : projets et
-éléments, stock, import de BOM, masse & centrage, registre de flash,
-bibliothèque de rapports et wiki. Django 5.2 + PostgreSQL, deux conteneurs,
-prévu pour tourner sur un Raspberry Pi 4/5.
+**Anubis** est la plateforme web interne du **Cercle Aérospatial CentraleSupélec
+(CACS)**. Elle sert à mieux manager les projets et à suivre l'avancement des
+équipes : qui travaille sur quoi, à quelle étape en est chaque élément, ce qu'il
+y a en stock, ce qui a été documenté et ce que la promotion suivante devra
+reprendre.
+
+> **État actuel : seul le PECS est couvert.** À ce stade, le site est adapté
+> uniquement au **PECS (Pôle Espace CentraleSupélec)** du CACS. Les autres
+> pôles du cercle (le sélecteur affiche déjà « HELICS — à venir ») ne sont pas
+> encore pris en charge.
+
+## Ce que ça apporte
+
+- **Projets et avancement** : un projet (fusée, drone, banc de test…) regroupe
+  des éléments (carte électronique, pièce mécanique, module logiciel), chacun
+  avec son cycle de vie propre à son pôle, un kanban de tâches et un fil
+  d'activité avec photos.
+- **Les trois pôles sur un même projet** : élec, méca et soft partagent le même
+  Hub au lieu de maintenir chacun leur outil.
+- **Stock** : catalogue de composants dont la quantité est la somme des
+  mouvements (donc jamais fausse), sortie rapide, saisie en rafale,
+  faisabilité et liste d'achat.
+- **BOM** : import de nomenclatures avec rapprochement automatique au catalogue.
+- **Méca** : masse réellement pesée, centre de gravité et marge statique.
+- **Soft** : registre de flash — quelle version tourne sur quelle carte.
+- **Mémoire de l'asso** : bibliothèque de rapports avec recherche plein texte,
+  et wiki versionné, pour que le savoir survive aux passations.
+
+Django 5.2 + PostgreSQL, deux conteneurs Docker, prévu pour un petit serveur
+(Raspberry Pi 4/5 ou VM Linux de 2 Go de RAM).
 
 ---
 
