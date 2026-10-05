@@ -8,6 +8,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+# Le bit exécutable se perd selon le système qui a fait le clone (Windows) :
+# on le fixe dans l'image plutôt que de compter sur git.
+RUN chmod +x entrypoint.sh
 
 # /data = volume docker hub_media : médias (photos, PDF) + statiques collectés.
 RUN mkdir -p /data/media /data/static
